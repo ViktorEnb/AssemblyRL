@@ -1,0 +1,35 @@
+Representation of assembly line:
+
+Number of possible assembly lines are fairly limited and can be enumerated
+
+Each assembly line (including end of program) will be represented with a one-hot vector
+
+Allowed assembly instructions:
+    mov
+    cmp 
+    cmov
+    add
+    ...
+
+
+Representation of program:
+    f(a, program) -> Representation
+
+    (Empty program will be represented as (0,...,0))
+
+Value function:
+    V(Representation) -> value
+
+
+Main algorithm:
+
+Agent.get_action() --> mcts.rollout(policy_network) --> rollout -->  game.get_reward()   
+
+
+
+FUTURE PROJECT: 
+
+    ML image compression
+
+
+

@@ -2,6 +2,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from transformer import * 
+
+from game import Game, ToyGame
+from agent import Agent
+from mcts import MCTS
+from node import Node
+
 # Define the policy network
 class PolicyNetwork(nn.Module):
     def __init__(self, input_dim, action_dim, hidden_dim):
@@ -29,57 +35,21 @@ class AlphaDevModel(nn.Module):
         action_probs = self.policy_network(embeddings[-1])
         return action_probs
 
-# Dummy data loader for training (replace with real data)
-class DummyDataLoader:
-    def __iter__(self):
-        # Generating a batch of 10 sequences, each of length 6
-        # Each sequence has input_dim features and is followed by a dummy reward
-        return iter([(torch.randn(6, 1, input_dim), torch.tensor(1.0, requires_grad=False)) for _ in range(10)])
+if __name__ == "__main__":
+    # Example usage
+    game = ToyGame()
+    input_size = 1  # ToyGame has single state dimension
+    hidden_size = 32  # Hidden layer size of the neural network
+    num_actions = 2  # ToyGame has two possible actions per state
 
-# Define the dimensions
-input_dim = len(instruction_set)
-hidden_dim = 64
-num_heads = 2
-num_layers = 2
-action_dim = len(instruction_set)  # Assuming the number of possible actions is the same as instructions
+    agent = Agent(game, input_size, hidden_size, num_actions)
+    agent.train(num_iterations=100)
 
-# Initialize the model
-model = AlphaDevModel(input_dim, hidden_dim, num_heads, num_layers, action_dim)
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+    # After training, use the agent to play the game
+    state = game.initialize_state()
+    while not game.is_terminal(state):
+        action = agent.get_action(state)
+        print(f"Current state: {state}, Selected action: {action}")
+        state = game.apply_action(state, action)
 
-# Example training process
-def train_model(model, data_loader, optimizer, num_epochs):
-    for epoch in range(num_epochs):
-        for sequence, reward in data_loader:
-            optimizer.zero_grad()
-            
-            # Ensure sequence requires grad
-            sequence = sequence.requires_grad_()
-
-            # Encode the sequence and predict action probabilities
-            action_probs = model(sequence)
-
-            # Convert reward to a tensor that supports gradient computation
-            # Assume a simple loss function: -reward * log(probability of chosen action)
-            reward = torch.tensor(reward, requires_grad=False)
-
-            # Here, we assume you select the action with the highest probability
-            action = torch.argmax(action_probs, dim=-1)
-            
-            # Convert action to a one-hot vector for computing log probability
-            action_one_hot = torch.nn.functional.one_hot(action, num_classes=action_dim).float()
-            log_prob = torch.sum(action_one_hot * torch.log(action_probs), dim=-1)
-
-            # Loss is negative reward weighted by the log probability
-            loss = -reward * log_prob
-
-            # Backpropagate the loss
-            loss.backward()
-            optimizer.step()
-            
-            print(f"Action probabilities: {action_probs}")
-            print(f"Epoch {epoch + 1}, Loss: {loss.item()}, Action: {action.item()}")
-
-# Train the model
-data_loader = DummyDataLoader()
-train_model(model, data_loader, optimizer, num_epochs=100)
+    print(f"Game ended with reward: {game.get_reward(state)}")

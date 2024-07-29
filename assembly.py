@@ -217,10 +217,10 @@ class AssemblyGame(Game):
             node = node.parent
         return counter >= 7    
 
-    def apply_action(self, node, action : int):
-        action_onehot = torch.zeros(self.get_num_actions(node.state))
+    def apply_action(self, state, action : int):
+        action_onehot = torch.zeros(self.get_num_actions(state))
         action_onehot[action] = 1
-        return self.repr_network(torch.cat((node.state, action_onehot)))
+        return self.repr_network(torch.cat((state, action_onehot)))
 
 
     def write_game(self, actions, filename=None, meta_info = []):

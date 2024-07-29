@@ -10,7 +10,7 @@ import os
 import random
 
 class Agent:
-    def __init__(self, game, repr_size, action_dim, game_with_repr_network=False):
+    def __init__(self, game, repr_size, action_dim):
         self.game = game
         self.mcts = MCTS(game)
         self.repr_size = repr_size
@@ -21,10 +21,8 @@ class Agent:
         self.value_network = Value(repr_size, hidden_size)
         self.value_optimizer = optim.Adam(self.value_network.parameters(), lr=0.001)
         self.replay = [] #List of played games and the rewards achieved
-        self.batch_size = 25
+        self.batch_size = 1
         self.previous_best_reward = -float('inf')
-        #Boolean value indicating whether the game uses a neural network to represent states
-        self.has_repr_network = game_with_repr_network
 
 
     def get_action(self, node):
@@ -35,10 +33,6 @@ class Agent:
         # Select action based on visit counts
         best_node = self.mcts.select_best_action(node)
         return best_node
-    def print_values(self):
-        for i in range(7):
-            t = torch.tensor([i], dtype=torch.float32)
-            print("self.value_network(" + str(i) +") = ", self.value_network(t))
 
 
     def train(self, num_iterations):
@@ -55,6 +49,7 @@ class Agent:
             self.save_experience(node, reward)
             # self.save_best_game(i)
             self.update_networks()
+        # self.train_on_entire_game()
             
     def save_experience(self, node, reward):
         game = []
@@ -84,35 +79,83 @@ class Agent:
         policy_loss = 0
         policy_loss_fn = torch.nn.CrossEntropyLoss()
         self.policy_optimizer.zero_grad()
+        if self.game.has_repr_network:
+            self.game.repr_network.zero_grad()
         #TRAINING POLICY NETWORK
-        current_state = self.game.initialize_state()
         for replay in batch:
+            current_state = self.game.initialize_state()
             game = replay["game"]
             reward = replay["reward"]
             for move in game:
                 action = move["action"]
-                state = move["state"]
+                if self.game.has_repr_network:
+                    current_state = self.game.apply_action(current_state, action)
+                else:
+                    state = move["state"]
+                    current_state = state
                 predicted_actions = self.policy_network(current_state)
-                current_state = state
-                # action_onehot = torch.zeros(self.action_dim)
-                # action_onehot[action] = 1
-                policy_loss += policy_loss_fn(predicted_actions, torch.tensor(action))
+                policy_loss += policy_loss_fn(predicted_actions, torch.tensor(action))   
         policy_loss.backward()
         self.policy_optimizer.step()
+        if self.game.has_repr_network:
+            self.game.repr_network.step()
+
         self.value_optimizer.zero_grad()
         value_loss = 0
         value_loss_fn = torch.nn.MSELoss()
         #TRAINING VALUE NETWORK
-        current_state = self.game.initialize_state()
         for replay in batch:
+            current_state = self.game.initialize_state()
             game = replay["game"]
             reward = replay["reward"]
             for move in game:
-                state = move["state"]
+                if self.game.has_repr_network:
+                    action = move["action"]
+                    current_state = self.game.apply_action(current_state, action)
+                else:
+                    state = move["state"]
+                    current_state = state
                 predicted_reward = self.value_network(current_state)
-                value_loss += value_loss_fn(predicted_reward, torch.tensor(reward, dtype=torch.float32))
+                value_loss += value_loss_fn(predicted_reward, torch.tensor([reward], dtype=torch.float32))
                 current_state = state
         value_loss.backward()
         self.value_optimizer.step()
+
+    def get_unique_states(self):
+        unique_states = []
+        unique_states.append(self.game.initialize_state())
+        for replay in self.replay:
+            for move in replay["game"]:
+                if move["state"] not in unique_states:
+                    unique_states.append(move["state"])
+        return unique_states
+    
+    def print_network_predictions(self):
+        unique_states = self.get_unique_states()
+        for state in unique_states:
+            print("State: ", state, "   Value(state): ", self.value_network(state))
+            logits = self.policy_network(state)
+            action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
+            print("State: ", state, " Action probs: ", action_probs)
+            if self.game.has_repr_network:
+                random_action = self.game.get_actions(None)[0]
+                action_onehot = torch.zeros(2)
+                action_onehot[random_action] = 1
+                print("State: ", state, " self.game.repr_network(state, self.game.get_actions(state)[0]): ", self.game.repr_network(torch.concat((state, action_onehot))))
+        
+    #Used for testing training of value and policy network. Is called after gathering of experiences
+    def train_on_entire_game(self):
+        #Print before training values
+        self.print_network_predictions()
+
+        #Sample 100 batches
+        for i in range(1000):
+            self.update_networks()
+        print("\n\n\n")
+        #Print after training values
+        self.print_network_predictions()
+
+
+
                 
 

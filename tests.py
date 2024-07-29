@@ -3,20 +3,20 @@ import torch.nn as nn
 import torch.optim as optim
 
 from assembly import AssemblyGame
-from game import Game, ToyGame
+from game import Game, ToyGame, ToyGameWithReprNetwork
 import subprocess
 from agent import Agent
 
 def train_on_toy_game():
     #Trains an agent on an extremely simple game
-    game = ToyGame()
-    repr_size = 1
+    game = ToyGameWithReprNetwork()
+    repr_size = 7
     num_actions = 2
     agent = Agent(game, repr_size, num_actions)
-    agent.print_values()
+    agent.print_network_predictions()
     agent.train(num_iterations=1000)
-    agent.print_values()
-    
+    print("\n\n\n")
+    agent.print_network_predictions()
     
 def cmd_test():
     #Tests compiling c file from cmd

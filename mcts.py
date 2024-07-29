@@ -22,7 +22,7 @@ class MCTS:
             logits = policy_network(node.state)
             action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
             action = np.random.choice(self.game.get_actions(node), p=action_probs)
-            final_state = self.game.apply_action(node, action)
+            final_state = self.game.apply_action(node.state, action)
         else:
             final_state = node.state
         # 3. Simulation approximated by value  network
@@ -50,26 +50,11 @@ class MCTS:
         state = node.state
         actions = self.game.get_actions(node)
         for action in actions:
-            next_state = self.game.apply_action(node, action)
+            next_state = self.game.apply_action(node.state, action)
             child_node = Node(state=next_state, parent=node, action = action)
             node.add_child(child_node)
         node.is_expanded = True
 
-    # def simulate(self, node, policy_network):
-    #     current_node = node
-    #     terminal = False
-    #     while not self.game.is_terminal(current_node):
-    #         terminal = True
-    #         # logits = policy_network(current_node.state)
-    #         # action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
-    #         action = np.random.choice(self.game.get_actions(current_node))
-    #         current_state = self.game.apply_action(current_node.state, action)
-    #         current_node = Node(current_state, current_node, action)
-
-    #     actions = self.game.collect_game(current_node)
-    #     reward = self.game.get_reward(actions)
-    #     self.replay.append({'game': actions, 'reward': reward})
-    #     return reward
 
     def backpropagate(self, node, reward):
         current_node = node
@@ -77,16 +62,25 @@ class MCTS:
         while current_node is not None:
             current_node.update(reward)
             current_node = current_node.parent
+
+    def softmax(self, x):
+        """Compute softmax values for each set of scores in x."""
+        temperature=1
+        e_x = np.exp((x - np.max(x)) / temperature)
+        return e_x / e_x.sum()
     
     # Select the action with the highest visit count from the root's children
     def select_best_action(self, node):
-        #Shuffle in order to not favour small indicies in case of a tie    
-        random.shuffle(node.children)
-        # print("SELECTING THE HIGHEST OF THE FOLLOWING")
-        # for child in node.children:
-        #     print(child.visit_count, "   ", child.action,    "    ", self.game.assembly.instruction_decode(child.action))
-        best_action_node = max(node.children, key=lambda c: c.visit_count)
-        return best_action_node
+        # Extract visit counts from children
+        visit_counts = np.array([child.visit_count for child in node.children])
+        
+        # Calculate softmax probabilities
+        probabilities = self.softmax(visit_counts)
+        
+        # Select a child based on the softmax probabilities
+        selected_index = np.random.choice(len(node.children), p=probabilities)
+        return node.children[selected_index]
+
 
     def reset(self):
         self.root = Node(state=self.game.initialize_state(), parent=None)

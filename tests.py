@@ -17,6 +17,7 @@ def train_on_toy_game():
     agent.train(num_iterations=1000)
     print("\n\n\n")
     agent.print_network_predictions()
+    agent.play_game()
     
 def cmd_test():
     #Tests compiling c file from cmd

@@ -9,7 +9,7 @@ class MCTS:
     def __init__(self, game):
         self.game = game
         self.root = Node(state=self.game.initialize_state(), parent=None)
-        self.lambd = 0.5
+        self.lambd = 0
 
     def rollout(self, policy_network, value_network, node):
         #Todo: come up with a cleaner way without this extra variable
@@ -27,7 +27,7 @@ class MCTS:
         else:
             final_state = node.state
         # 3. Simulation approximated by value  network
-        reward = self.lambd + value_network(final_state) + (1 - self.lambd) * self.game.get_reward(node)
+        reward = self.lambd * value_network(final_state) + (1 - self.lambd) * self.game.get_reward(node)
         # 4. Backpropagation
         self.backpropagate(node, reward)
 

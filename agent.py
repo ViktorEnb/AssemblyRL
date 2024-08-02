@@ -41,7 +41,7 @@ class Agent:
     def train(self, num_iterations):
         for i in range(num_iterations):
             #It doesn't make sense to update the policy with a random value network
-            if i >= num_iterations // 5:
+            if i >= 0:
                 self.update_policy = True
             # print(i, "th iteration")
             self.mcts.reset()
@@ -63,6 +63,7 @@ class Agent:
             game.append({"action": node.action, "state": node.state})
             node = node.parent
         game.reverse()
+        print({"game": game, "reward": reward})
         self.replay.append({"game": game, "reward": reward})
     
     def save_best_game(self,iteration):        
@@ -92,8 +93,8 @@ class Agent:
             reward = replay["reward"]
             for move in game:
                 action = move["action"]
-                current_state = self.game.apply_action(current_state, action)
                 predicted_actions = self.policy_network(current_state)
+                current_state = self.game.apply_action(current_state, action)
                 policy_loss += policy_loss_fn(predicted_actions, torch.tensor(action))   
         policy_loss.backward()
 
@@ -160,7 +161,9 @@ class Agent:
         while not self.game.is_terminal(node):
             logits = self.policy_network(node.state)
             action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
-            selected_action = np.random.choice(self.game.get_actions(node), p=action_probs)
+            index = np.argmax(action_probs)
+            selected_action = self.game.get_actions(node)[index]
+            # selected_action = np.random.choice(self.game.get_actions(node), p=action_probs)
             print("Selecting action: ", selected_action)
             node = Node(self.game.apply_action(node.state, selected_action), node, action=selected_action)
             nodes.append(node)

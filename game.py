@@ -88,15 +88,16 @@ class ToyGameWithReprNetwork(Game):
         }
         self.rewards = {
             3: 10,
-            4: 16,
-            5: -1,
-            6: 2
+            4: -3,
+            5: 25,
+            6: 12
         }
         self.state_size = len(self.tree.keys())
         self.has_repr_network = True
         self.repr_network = Representation(self.state_size, 2, self.state_size)
         self.repr_optimizer =  optim.Adam(self.repr_network.parameters(), lr=0.01)
         self.initialize_random_games()
+
     def initialize_random_games(self):
         self.random_games = []
         for i in range(15):
@@ -131,6 +132,7 @@ class ToyGameWithReprNetwork(Game):
         for action in actions:
             new_state = self.tree[new_state][action]
         return new_state
+    
     def get_reward(self, node):
         if self.is_terminal(node):
             new_state = self.get_current_state(node)

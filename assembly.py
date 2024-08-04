@@ -5,6 +5,7 @@ from network import Representation
 import subprocess
 from datetime import datetime
 import os
+import time 
 
 class Assembly:
     def __init__(self):
@@ -94,8 +95,7 @@ class Assembly:
             if "," in words[i]:
                 words[i] = words[i].replace(",", "")
                 commas.append(i)
-        print(words)
-        
+                        
         for (index, word) in enumerate(words):
             if index in commas:
                 instruction.append(",")
@@ -120,6 +120,7 @@ class AssemblyGame(Game):
         self.repr_optimizer = optim.Adam(self.repr_network.parameters(), lr=0.001)
         self.time_started = datetime.now() 
         self.generate_test_cases()
+        self.set_algo_name()
         if not self.validate_test_cases():
             print("Test cases are in the wrong format.")
 
@@ -127,14 +128,11 @@ class AssemblyGame(Game):
         return torch.zeros(self.repr_size)
 
     def generate_test_cases(self):
-        #Has to be modified based on the target algorithm
-        self.test_cases = []
-        self.targets = []
-        for _ in range(2):
-            test_case = torch.randint(0,10,(2,))
-            self.test_cases.append([test_case])
-            target = test_case.flip(dims=(-1,))
-            self.targets.append([target])
+        #Depends on the target algorithm
+        pass
+    def set_algo_name(self):
+        #Depends on the target algorithm
+        pass
 
     def validate_test_cases(self):
         shapes = [a.shape for a in self.test_cases[0]]
@@ -168,13 +166,15 @@ class AssemblyGame(Game):
         #Todo: give some points for partially correct tests
         element_counter = 0
         passed_tests = 0
+        outputs = stdout.split(",")[:-1]
         for i in range(len(self.targets)):
             passed = True
             for j in range(self.nrof_targets):
                 nrof_elements = self.targets[i][j].numel()
                 target_list = self.targets[i][j].reshape(nrof_elements,)
                 for k in range(nrof_elements):
-                    if float(stdout[element_counter]) != target_list[k].item():
+                    print(target_list[k].item(), "   ", outputs[element_counter])
+                    if float(outputs[element_counter]) != target_list[k].item():
                         passed = False
                     element_counter += 1
             if passed:
@@ -184,10 +184,29 @@ class AssemblyGame(Game):
 
     #Runs the assembly program and calculates reward based on 
     #correctness and time of execution
-    def get_reward(self, actions : list[tuple]):
-        self.write_game(actions)
-        subprocess.run(["gcc", "-o", "fast_swapping", "fast_swapping.c"])
-        printf = subprocess.run(["fast_swapping"], capture_output=True, text=True).stdout
+    def get_reward(self, node):
+        actions = []
+        if type(node) == type([]):
+            actions = node
+        else:           
+            while node.parent != None:
+                actions.append(node.action)
+                node = node.parent
+            actions.reverse()
+
+        # self.write_game(actions)
+        c_file_path = os.path.join(".", "tmp", self.algo_name + ".c")
+        exe_file_path = os.path.join(".", "tmp", self.algo_name + ".exe")
+        subprocess.run(["gcc", "-o", exe_file_path, c_file_path])
+        printf = ""
+        try:
+            printf = subprocess.run([exe_file_path], capture_output=True, text=True).stdout
+        except Exception:
+            #Just try again
+            time.sleep(1)
+            subprocess.run(["gcc", "-o", exe_file_path, c_file_path])
+            printf = subprocess.run([exe_file_path], capture_output=True, text=True).stdout
+
         passed_cases = self.get_nrof_passed_test_cases(printf)
         total_cases = len(self.targets)
         
@@ -209,7 +228,7 @@ class AssemblyGame(Game):
 
     def is_terminal(self, node):
         #Check for END of program line
-        if node.action == 0:
+        if node.action == self.assembly.vocab_size-1:
             return True
         counter = 0
         while node.parent != None:
@@ -224,16 +243,14 @@ class AssemblyGame(Game):
 
 
     def write_game(self, actions, filename=None, meta_info = []):
-        #Path for storing c-file.
-        training_path = ""
         if filename == None:
-            filename="fast_swapping.c"
+            filename = os.path.join(".", "tmp", self.algo_name + ".c")
         else:
-            training_path = os.path.join(".", "best_algos")#, self.time_started.strftime("%m-%d-%H-%M"))
+            #Writing game to best_algos
+            training_path = os.path.join(".", "best_algos", self.time_started.strftime("%m-%d-%H-%M"))
             if not os.path.exists(training_path):
                 os.makedirs(training_path)
 
-        filename = os.path.join(training_path, filename)
         with open(filename, "w") as f:
             f.write("#include <stdio.h> \n")
             f.write("#include <stdlib.h> \n")
@@ -243,16 +260,14 @@ class AssemblyGame(Game):
             target_args = ["int* target" + str(k) for k in range(self.nrof_targets)]
             args = ",".join(input_args + target_args)
 
-            f.write("void swap(" + args + "){ \n")
+            f.write("void " + self.algo_name + "(" + args + "){ \n")
             if len(actions) > 1:
                 f.write("__asm__ ( \n")
-            
             for line in actions:
                 #Check for END
-                if line == 0:
+                if line == self.assembly.vocab_size - 1:
                     break
                 f.write("\"" + self.assembly.instruction_decode(line) + ";\" \n")
-            
             if len(actions) > 1:
                 f.write(": \n")
                 f.write(": \"r\"(" + args.replace("int* ", "").replace(",", "),\"r\"(") + ")\n ")
@@ -290,13 +305,13 @@ class AssemblyGame(Game):
 
                     f.write("target" + str(j) + " = malloc(sizeof(int) * " + str(nrof_elements) + "); \n")
                 
-                f.write("swap(" + args.replace("int* ","") + "); \n")
+                f.write(self.algo_name + "(" + args.replace("int* ","") + "); \n")
 
                 #Print target results
                 for j in range(self.nrof_targets):
                     nrof_elements = targets[j].numel()   
                     for k in range(nrof_elements):
-                        f.write("printf(\"%d\", target" + str(j) + "[" + str(k) + "]); \n")
+                        f.write("printf(\"%d,\", target" + str(j) + "[" + str(k) + "]); \n")
 
             f.write("} \n")
 

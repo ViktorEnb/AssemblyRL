@@ -16,8 +16,9 @@ class Agent:
         self.game = game
         self.mcts = MCTS(game)
         self.repr_size = repr_size
-        hidden_size = 20
+        hidden_size = 32
         self.action_dim = action_dim
+        self.device = ("cuda" if torch.cuda.is_available() else "cpu") #Not used at the moment as my cpu is faster than my gpu
         self.policy_network = Policy(repr_size, hidden_size, action_dim)
         self.policy_optimizer = optim.Adam(self.policy_network.parameters(), lr=0.01)
         self.value_network = Value(repr_size, hidden_size)
@@ -43,7 +44,7 @@ class Agent:
             #It doesn't make sense to update the policy with a random value network
             if i >= 0:
                 self.update_policy = True
-            # print(i, "th iteration")
+            print(i, "th iteration")
             self.mcts.reset()
             node = self.mcts.root
             while not self.game.is_terminal(node):
@@ -53,7 +54,7 @@ class Agent:
                 # print("Selected action: ", node.action)
             reward = self.game.get_reward(node)
             self.save_experience(node, reward)
-            # self.save_best_game(i)
+            self.save_best_game(i)
             self.update_networks()
         # self.train_on_entire_game()
             
@@ -63,19 +64,22 @@ class Agent:
             game.append({"action": node.action, "state": node.state})
             node = node.parent
         game.reverse()
-        print({"game": game, "reward": reward})
+        # print({"game": game, "reward": reward})
         self.replay.append({"game": game, "reward": reward})
     
     def save_best_game(self,iteration):        
-        best_game = max(self.mcts.replay, key=lambda x: x['reward'])
-        actions = best_game["game"]
+        best_game = max(self.replay, key=lambda x: x['reward'])
+        actions = []
+        for d in best_game["game"]:
+            actions.append(d["action"])
+
         reward = round(best_game["reward"],2)
         if reward <= self.previous_best_reward:
             return
 
         self.previous_best_reward = reward
         filename = str(reward) + ".c"
-        self.game.write_game(actions, filename=filename, meta_info = ["Reward: " + str(reward), "Iteration: " + str(iteration), "Time since start: " + str((datetime.now() - self.game.time_started).seconds)])
+        self.game.write_game(actions, filename=filename, meta_info = ["Reward: " + str(reward), "Iteration: " + str(iteration), "Time since start: " + str((datetime.now() - self.game.time_started).seconds) + " seconds"])
 
     def update_networks(self):
         if len(self.replay) < self.batch_size:

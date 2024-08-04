@@ -9,30 +9,35 @@ class MCTS:
     def __init__(self, game):
         self.game = game
         self.root = Node(state=self.game.initialize_state(), parent=None)
-        self.lambd = 0
 
-    def rollout(self, policy_network, value_network, node):
-        #Todo: come up with a cleaner way without this extra variable
-        final_state = None
+    def rollout(self, policy_network, value_network, node, _lambda = 0.5):
         # 1. Selection with UCB
         while node.is_expanded and not self.game.is_terminal(node):
             node = self.select(node)
-        # 2. Expansion with policy network
-        if not self.game.is_terminal(node):
+        
+        # 2. Use value network for more accurate reward estimate        
+        reward = _lambda * value_network(node.state)
+        if _lambda == 1:
+            self.expand(node)
+            self.backpropagate(node, reward)
+            return 
+        
+        # 3. Simulating a reward
+        while not self.game.is_terminal(node):
             self.expand(node)
             logits = policy_network(node.state)
             action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
             action = np.random.choice(self.game.get_actions(node), p=action_probs)
-            final_state = self.game.apply_action(node.state, action)
-        else:
-            final_state = node.state
-        # 3. Simulation approximated by value  network
-        reward = self.lambd * value_network(final_state) + (1 - self.lambd) * self.game.get_reward(node)
+            for child in node.children:
+                if child.action == action:
+                    node = child
+        
+        reward += (1 - _lambda) * self.game.get_reward(node)
         # 4. Backpropagation
         self.backpropagate(node, reward)
 
     def select(self, node):
-        C = 2.41  # Exploration parameter
+        C = 1.41  # Exploration parameter
         best_value = -float('inf')
         best_nodes = []
         uct_values = []

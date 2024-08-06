@@ -22,7 +22,7 @@ def train_on_toy_game():
     
 
 def test_swap_2_elements():
-    #Tests that basic assembly for swappign two numbers get 100% pass rate
+    #Tests that basic assembly for swapping two numbers get 100% pass rate
     game = Swap2Elements(32, 32)
     swap_instructions = ["movl (%0) %%eax", "movl 4(%0) %%ebx", "movl %%ebx (%1)", "movl %%eax 4(%1)"]
     swap_instructions_encode = [game.assembly.instruction_encode(line) for line in swap_instructions]

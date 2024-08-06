@@ -9,29 +9,7 @@ import time
 
 class Assembly:
     def __init__(self):
-        self.init_registers()
-        self.init_memory_location()
-        self.init_vocab()
-        self.calculate_vocab_size()
-    
-    def init_vocab(self):
-        #Describes all allowed assembly lines  
-        self.vocab = ["movl REG, REG",
-        "movl MEM, REG",
-        "movl REG, MEM",
-        "imull REG, REG",
-        "add REG, REG",
-        "END"
-        ]
-
-    def init_registers(self):
-        #All allowed registers
-        self.registers = ["%%eax", "%%ebx", "%%ecx", "%%edx"]
-
-    def init_memory_location(self):
-        #All allowed memory locations
-        self.mem_locs = ["(%0)", "4(%0)", "8(%0)", "12(%0)", "(%1)", "4(%1)", "8(%1)", "12(%1)", "(%2)", "4(%2)", "8(%2)", "12(%2)"]
-
+        pass
     def calculate_vocab_size(self):
         #Calculates the number of allowed assembly-lines
         self.vocab_size = 0
@@ -117,6 +95,7 @@ class Assembly:
 class AssemblyGame(Game):
     def __init__(self, repr_size, hidden_size):
         self.assembly = Assembly()
+        self.init_vocab()   
         self.repr_size = repr_size
         self.repr_network = Representation(self.repr_size, self.assembly.vocab_size, hidden_size)
         self.repr_optimizer = optim.Adam(self.repr_network.parameters(), lr=0.001)
@@ -125,17 +104,19 @@ class AssemblyGame(Game):
         self.set_algo_name()
         if not self.validate_test_cases():
             print("Test cases are in the wrong format.")
-
+    
     def initialize_state(self):
         return torch.zeros(self.repr_size)
 
     def generate_test_cases(self):
         #Depends on the target algorithm
-        pass
+        raise NotImplementedError
     def set_algo_name(self):
         #Depends on the target algorithm
-        pass
-
+        raise NotImplementedError
+    def init_vocab(self):
+        #Depends on the target algorithm
+        raise NotImplementedError
     def validate_test_cases(self):
         shapes = [a.shape for a in self.test_cases[0]]
         self.nrof_inputs = len(shapes)
@@ -175,7 +156,6 @@ class AssemblyGame(Game):
                 nrof_elements = self.targets[i][j].numel()
                 target_list = self.targets[i][j].reshape(nrof_elements,)
                 for k in range(nrof_elements):
-                    # print(target_list[k].item(), "   ", outputs[element_counter])
                     if float(outputs[element_counter]) == target_list[k].item():
                         #Give some points for partially correct scores
                         passed_element_counter += 1
@@ -191,6 +171,7 @@ class AssemblyGame(Game):
         else:
             #Passing a test case should be more important than passing lots of elements without passing cases
             return passed_tests * 70.0 / len(self.targets) + passed_element_counter * 30.0 / element_counter
+    
     #Runs the assembly program and calculates reward based on 
     #correctness and time of execution
     def get_reward(self, node):

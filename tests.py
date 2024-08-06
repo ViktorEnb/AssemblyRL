@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from assembly import AssemblyGame
-from game import Game, ToyGame, ToyGameWithReprNetwork
+from game import Game, ToyGameWithReprNetwork
 import subprocess
 from agent import Agent
 from matrix import MatrixMultiplication, Swap2Elements

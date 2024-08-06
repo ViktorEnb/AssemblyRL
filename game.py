@@ -96,7 +96,6 @@ class ToyGameWithReprNetwork(Game):
 
     def is_terminal(self, node):
         new_state = self.get_current_state(node)
-
         # A state is terminal if it has no children
         return len(self.tree[new_state]) == 0
 

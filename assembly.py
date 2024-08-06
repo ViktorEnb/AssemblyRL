@@ -19,16 +19,18 @@ class Assembly:
         self.vocab = ["movl REG, REG",
         "movl MEM, REG",
         "movl REG, MEM",
+        "imull REG, REG",
+        "add REG, REG",
         "END"
         ]
 
     def init_registers(self):
         #All allowed registers
-        self.registers = ["%%eax", "%%ebx"]
+        self.registers = ["%%eax", "%%ebx", "%%ecx", "%%edx"]
 
     def init_memory_location(self):
         #All allowed memory locations
-        self.mem_locs = ["(%0)", "4(%0)", "(%1)", "4(%1)"]
+        self.mem_locs = ["(%0)", "4(%0)", "8(%0)", "12(%0)", "(%1)", "4(%1)", "8(%1)", "12(%1)", "(%2)", "4(%2)", "8(%2)", "12(%2)"]
 
     def calculate_vocab_size(self):
         #Calculates the number of allowed assembly-lines
@@ -163,8 +165,8 @@ class AssemblyGame(Game):
         #Compares the stdout from the program which was run to the target
         #Returns the total number of test cases which passed
         
-        #Todo: give some points for partially correct tests
         element_counter = 0
+        passed_element_counter = 0
         passed_tests = 0
         outputs = stdout.split(",")[:-1]
         for i in range(len(self.targets)):
@@ -173,15 +175,22 @@ class AssemblyGame(Game):
                 nrof_elements = self.targets[i][j].numel()
                 target_list = self.targets[i][j].reshape(nrof_elements,)
                 for k in range(nrof_elements):
-                    print(target_list[k].item(), "   ", outputs[element_counter])
-                    if float(outputs[element_counter]) != target_list[k].item():
-                        passed = False
+                    # print(target_list[k].item(), "   ", outputs[element_counter])
+                    if float(outputs[element_counter]) == target_list[k].item():
+                        #Give some points for partially correct scores
+                        passed_element_counter += 1
+                    else:
+                        passed= False
                     element_counter += 1
             if passed:
                 passed_tests += 1
 
-        return passed_tests
-
+        if passed_tests == len(self.targets):
+            #perfect score
+            return 100
+        else:
+            #Passing a test case should be more important than passing lots of elements without passing cases
+            return passed_tests * 70.0 / len(self.targets) + passed_element_counter * 30.0 / element_counter
     #Runs the assembly program and calculates reward based on 
     #correctness and time of execution
     def get_reward(self, node):
@@ -194,7 +203,7 @@ class AssemblyGame(Game):
                 node = node.parent
             actions.reverse()
 
-        # self.write_game(actions)
+        self.write_game(actions)
         c_file_path = os.path.join(".", "tmp", self.algo_name + ".c")
         exe_file_path = os.path.join(".", "tmp", self.algo_name + ".exe")
         subprocess.run(["gcc", "-o", exe_file_path, c_file_path])
@@ -206,15 +215,12 @@ class AssemblyGame(Game):
             time.sleep(1)
             subprocess.run(["gcc", "-o", exe_file_path, c_file_path])
             printf = subprocess.run([exe_file_path], capture_output=True, text=True).stdout
-
-        passed_cases = self.get_nrof_passed_test_cases(printf)
-        total_cases = len(self.targets)
         
-        #Percentage of passed tests
-        reward = int(passed_cases * 100.0 / total_cases)
+        reward = self.get_nrof_passed_test_cases(printf)
         #Only take into account execution time if all test cases are passed
         if reward == 100:
-            reward += int(1.0 / (len(actions) + 1) * 100)
+            #Give extra 25 points for a correct algorithm
+            reward += 25 + int(1.0 / (len(actions) + 1) * 100)
 
         return reward
     
@@ -271,7 +277,7 @@ class AssemblyGame(Game):
             if len(actions) > 1:
                 f.write(": \n")
                 f.write(": \"r\"(" + args.replace("int* ", "").replace(",", "),\"r\"(") + ")\n ")
-                f.write(": \"%eax\", \"%ebx\" \n")
+                f.write(": \"%eax\", \"%ebx\", \"%ecx\", \"%edx\" \n")
                 f.write("); \n")
             f.write("} \n")
 

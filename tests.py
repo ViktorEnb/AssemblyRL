@@ -31,10 +31,49 @@ def test_swap_2_elements():
 
 def test_matrix_multiplication():
     game = MatrixMultiplication(32, 32)
+    instructions = [
+                #calculating target[0]
+                "movl (%0) %%eax",   
+                "movl 4(%0) %%ebx",  
+                "movl (%1) %%ecx",    
+                "movl 8(%1) %%edx",
+                "imull %%eax %%ecx",
+                "imull %%ebx %%edx",
+                "add %%ecx %%edx",
+                "movl %%edx (%2)",
 
-    swap_instructions = ["movl (%0) %%eax", "movl 4(%0) %%ebx", "movl %%ebx (%1)", "movl %%eax 4(%1)"]
-    swap_instructions_encode = [game.assembly.instruction_encode(line) for line in swap_instructions]
-    print(game.get_reward(swap_instructions_encode))
+                #calculating target[1]
+                "movl (%0) %%eax",   
+                "movl 4(%0) %%ebx",  
+                "movl 4(%1) %%ecx",    
+                "movl 12(%1) %%edx",
+                "imull %%eax %%ecx",
+                "imull %%ebx %%edx",
+                "add %%ecx %%edx",
+                "movl %%edx 4(%2)",
+
+                #calculating target[2]
+                "movl 8(%0) %%eax",   
+                "movl 12(%0) %%ebx",  
+                "movl (%1) %%ecx",    
+                "movl 8(%1) %%edx",
+                "imull %%eax %%ecx",
+                "imull %%ebx %%edx",
+                "add %%ecx %%edx",
+                "movl %%edx 8(%2)",
+
+                #calculating target[3]
+                "movl 8(%0) %%eax",   
+                "movl 12(%0) %%ebx",  
+                "movl 4(%1) %%ecx",    
+                "movl 12(%1) %%edx",
+                "imull %%eax %%ecx",
+                "imull %%ebx %%edx",
+                "add %%ecx %%edx",
+                "movl %%edx 12(%2)"
+                ]
+    matmul_instructions_encode = [game.assembly.instruction_encode(line) for line in instructions]
+    print(game.get_reward(matmul_instructions_encode))
 
     
 

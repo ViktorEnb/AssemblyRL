@@ -75,7 +75,8 @@ def test_matrix_multiplication():
     matmul_instructions_encode = [game.assembly.instruction_encode(line) for line in instructions]
     print(game.get_reward(matmul_instructions_encode))
 
-    
-
+def test_matrix_encoder():
+    game = MatrixMultiplication(32, 32) 
+    print(game.assembly.instruction_decode(game.assembly.instruction_encode("imull %%eax %%ebx")))
 if __name__ == "__main__":
-    test_matrix_multiplication()
+    test_matrix_encoder()

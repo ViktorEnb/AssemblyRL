@@ -10,7 +10,7 @@ class MCTS:
         self.game = game
         self.root = Node(state=self.game.initialize_state(), parent=None)
 
-    def rollout(self, policy_network, value_network, node, _lambda = 0.5):
+    def rollout(self, policy_network, value_network, node, _lambda = 0):
         # 1. Selection with UCB
         while node.is_expanded and not self.game.is_terminal(node):
             node = self.select(node)

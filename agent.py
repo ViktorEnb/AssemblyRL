@@ -78,7 +78,11 @@ class Agent:
             return
 
         self.previous_best_reward = reward
-        filename = str(reward) + ".c"
+        filename = os.path.join(".", "best_algos", self.game.time_started.strftime("%m-%d-%H-%M") + self.game.algo_name, str(reward) + ".c")
+        
+        if not os.path.exists(os.path.dirname(filename)):
+            os.makedirs(os.path.dirname(filename))
+
         self.game.write_game(actions, filename=filename, meta_info = ["Reward: " + str(reward), "Iteration: " + str(iteration), "Time since start: " + str((datetime.now() - self.game.time_started).seconds) + " seconds"])
 
     def update_networks(self):

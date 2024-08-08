@@ -19,13 +19,13 @@ class Swap2Elements(AssemblyGame):
 
     def init_vocab(self):
         #We need 2 registers
-        self.registers = ["%%eax", "%%ebx"]
+        self.assembly.registers = ["%%eax", "%%ebx"]
 
         #Memory addresers for 2 arrays of length 2.
-        self.mem_locs = ["(%0)", "4(%0)", "(%1)", "4(%1)"]
+        self.assembly.mem_locs = ["(%0)", "4(%0)", "(%1)", "4(%1)"]
             
         #All assembly instructions required for swapping 2 elements
-        self.vocab = ["movl REG, REG",
+        self.assembly.vocab = ["movl REG, REG",
         "movl MEM, REG",
         "movl REG, MEM",
         "END"

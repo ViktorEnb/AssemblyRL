@@ -184,7 +184,7 @@ class AssemblyGame(Game):
                 node = node.parent
             actions.reverse()
 
-        self.write_game(actions)
+        self.write_game(actions, filename=os.path.join(".", "tmp", self.algo_name + ".c"))
         c_file_path = os.path.join(".", "tmp", self.algo_name + ".c")
         exe_file_path = os.path.join(".", "tmp", self.algo_name + ".exe")
         subprocess.run(["gcc", "-o", exe_file_path, c_file_path])
@@ -201,7 +201,7 @@ class AssemblyGame(Game):
         #Only take into account execution time if all test cases are passed
         if reward == 100:
             #Give extra 25 points for a correct algorithm
-            reward += 25 + int(1.0 / (len(actions) + 1) * 100)
+            reward += 25 + int(1.0 / ((len(actions) + 1)**(1/4)) * 100)
 
         return reward
     
@@ -229,15 +229,7 @@ class AssemblyGame(Game):
         return self.repr_network(torch.cat((state, action_onehot)))
 
 
-    def write_game(self, actions, filename=None, meta_info = []):
-        if filename == None:
-            filename = os.path.join(".", "tmp", self.algo_name + ".c")
-        else:
-            #Writing game to best_algos
-            training_path = os.path.join(".", "best_algos", self.time_started.strftime("%m-%d-%H-%M"))
-            if not os.path.exists(training_path):
-                os.makedirs(training_path)
-
+    def write_game(self, actions, filename, meta_info = []):
         with open(filename, "w") as f:
             f.write("#include <stdio.h> \n")
             f.write("#include <stdlib.h> \n")

@@ -10,6 +10,7 @@ from datetime import datetime
 import os
 import random
 import numpy as np
+import time 
 
 class Agent:
     def __init__(self, game, repr_size, action_dim, load=False):
@@ -23,7 +24,7 @@ class Agent:
         self.policy_optimizer = optim.Adam(self.policy_network.parameters(), lr=0.01)
         self.value_network = Value(repr_size, hidden_size)
         self.value_optimizer = optim.Adam(self.value_network.parameters(), lr=0.01)        
-        
+
         if load:
             self.load_models(os.path.join(".", "saved_models", self.game.algo_name))
 
@@ -31,6 +32,8 @@ class Agent:
         self.batch_size = 1
         self.previous_best_reward = -float('inf')
         self.update_policy = False
+
+        self.training_time = 0 #Time spent training networks
 
 
     def get_action(self, node):
@@ -52,16 +55,18 @@ class Agent:
             self.mcts.reset()
             node = self.mcts.root
             while not self.game.is_terminal(node):
-                for _ in range(50): 
+                for _ in range(5): 
                     self.mcts.rollout(self.policy_network, self.value_network, node)
                 node = self.mcts.select_best_action(node)
                 # print("Selected action: ", node.action)
             reward = self.game.get_reward(node)
             self.save_experience(node, reward)
-            self.save_best_game(i)
             self.update_networks()
             if i % 10 == 0:
                 self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
+
+            self.save_best_game(i)
+
             
     def save_experience(self, node, reward):
         game = []
@@ -88,11 +93,14 @@ class Agent:
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
 
-        self.game.write_game(actions, filename=filename, meta_info = ["Reward: " + str(reward), "Iteration: " + str(iteration), "Time since start: " + str((datetime.now() - self.game.time_started).seconds) + " seconds"])
+        total_time = (datetime.now() - self.game.time_started).seconds
+        perc_training = self.training_time * 100.0 / total_time
+        self.game.write_game(actions, filename=filename, meta_info = ["Reward: " + str(reward), "Iteration: " + str(iteration), "Time since start: " + str(total_time) + " seconds", "Percentage of time updating networks: " + str(perc_training) + "%"])
 
     def update_networks(self):
         if len(self.replay) < self.batch_size:
             return
+        start_training = time.time()
         batch = random.sample(self.replay, self.batch_size)
 
         policy_loss = 0
@@ -132,7 +140,8 @@ class Agent:
         if self.update_policy:
             self.game.repr_optimizer.step()
 
-    
+        self.training_time += time.time() - start_training
+
     def print_network_predictions(self):
         unique_states = self.game.get_unique_states()
         for game in self.game.random_games:

@@ -12,17 +12,21 @@ import random
 import numpy as np
 
 class Agent:
-    def __init__(self, game, repr_size, action_dim):
+    def __init__(self, game, repr_size, action_dim, load=False):
         self.game = game
         self.mcts = MCTS(game)
         self.repr_size = repr_size
         hidden_size = 32
         self.action_dim = action_dim
-        self.device = ("cuda" if torch.cuda.is_available() else "cpu") #Not used at the moment as my cpu is faster than my gpu
+        self.device = ("cuda" if torch.cuda.is_available() else "cpu") #Not used at the moment as my cpu is faster than my gpu¨
         self.policy_network = Policy(repr_size, hidden_size, action_dim)
         self.policy_optimizer = optim.Adam(self.policy_network.parameters(), lr=0.01)
         self.value_network = Value(repr_size, hidden_size)
-        self.value_optimizer = optim.Adam(self.value_network.parameters(), lr=0.01)
+        self.value_optimizer = optim.Adam(self.value_network.parameters(), lr=0.01)        
+        
+        if load:
+            self.load_models(os.path.join(".", "saved_models", self.game.algo_name))
+
         self.replay = [] #List of played games and the rewards achieved
         self.batch_size = 1
         self.previous_best_reward = -float('inf')
@@ -56,7 +60,8 @@ class Agent:
             self.save_experience(node, reward)
             self.save_best_game(i)
             self.update_networks()
-        # self.train_on_entire_game()
+            if i % 10 == 0:
+                self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
             
     def save_experience(self, node, reward):
         game = []
@@ -177,6 +182,25 @@ class Agent:
             nodes.append(node)
         print("Got reward: ", self.game.get_reward(node))
 
+
+    def save_models(self, save_path):
+        """Save the policy and value networks along with their optimizers."""
+        torch.save({
+            'policy_network_state_dict': self.policy_network.state_dict(),
+            'policy_optimizer_state_dict': self.policy_optimizer.state_dict(),
+            'value_network_state_dict': self.value_network.state_dict(),
+            'value_optimizer_state_dict': self.value_optimizer.state_dict(),
+        }, save_path)
+        print(f"Models saved to {save_path}")
+
+    def load_models(self, load_path):
+        """Load the policy and value networks along with their optimizers."""
+        checkpoint = torch.load(load_path)
+        self.policy_network.load_state_dict(checkpoint['policy_network_state_dict'])
+        self.policy_optimizer.load_state_dict(checkpoint['policy_optimizer_state_dict'])
+        self.value_network.load_state_dict(checkpoint['value_network_state_dict'])
+        self.value_optimizer.load_state_dict(checkpoint['value_optimizer_state_dict'])
+        print(f"Models loaded from {load_path}")
 
 
                 

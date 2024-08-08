@@ -198,10 +198,12 @@ class AssemblyGame(Game):
             printf = subprocess.run([exe_file_path], capture_output=True, text=True).stdout
         
         reward = self.get_nrof_passed_test_cases(printf)
-        #Only take into account execution time if all test cases are passed
+        #Give extra points for passing all tests making it impossible for a fast but wrong algorithm to beat a slow but correct algorithm
         if reward == 100:
-            #Give extra 25 points for a correct algorithm
-            reward += 25 + int(1.0 / ((len(actions) + 1)**(1/4)) * 100)
+            reward += 50
+            
+        #Give points for fast algorithm
+        reward += int(1.0 / ((len(actions) + 1)**(1/3)) * 50)
 
         return reward
     

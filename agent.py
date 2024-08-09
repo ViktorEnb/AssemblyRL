@@ -55,7 +55,7 @@ class Agent:
             self.mcts.reset()
             node = self.mcts.root
             while not self.game.is_terminal(node):
-                for _ in range(5): 
+                for _ in range(50): 
                     self.mcts.rollout(self.policy_network, self.value_network, node)
                 node = self.mcts.select_best_action(node)
                 # print("Selected action: ", node.action)

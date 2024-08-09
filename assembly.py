@@ -197,13 +197,16 @@ class AssemblyGame(Game):
             subprocess.run(["gcc", "-o", exe_file_path, c_file_path])
             printf = subprocess.run([exe_file_path], capture_output=True, text=True).stdout
         
-        reward = self.get_nrof_passed_test_cases(printf)
+        passed_cases = self.get_nrof_passed_test_cases(printf)
+        reward = passed_cases
+
         #Give extra points for passing all tests making it impossible for a fast but wrong algorithm to beat a slow but correct algorithm
-        if reward == 100:
+        if passed_cases == 100:
             reward += 50
             
-        #Give points for fast algorithm
-        reward += int(1.0 / ((len(actions) + 1)**(1/3)) * 50)
+        #Give points for fast algorithm if the algorithm is atleast somewhat-correct
+        if passed_cases >= 40:
+            reward += int(1.0 / ((len(actions) + 1)**(1/3)) * 50)
 
         return reward
     
@@ -223,7 +226,7 @@ class AssemblyGame(Game):
         while node.parent != None:
             counter += 1
             node = node.parent
-        return counter >= 7    
+        return counter >= 50    
 
     def apply_action(self, state, action : int):
         action_onehot = torch.zeros(self.get_num_actions(state))

@@ -20,6 +20,14 @@ def train_on_toy_game():
     agent.print_network_predictions()
     agent.play_game()
     
+def train_on_swap_2_elements():
+    repr_size = 32
+    hidden_size = 32
+    #Make the results non-random to be able to test performance on different machines
+    torch.manual_seed(1)
+    game = Swap2Elements(repr_size, hidden_size)
+    agent = Agent(game, repr_size, game.get_num_actions("whatever"), load=False)
+    agent.train(num_iterations=10)  
 
 def test_swap_2_elements():
     #Tests that basic assembly for swapping two numbers get 100% pass rate
@@ -72,11 +80,12 @@ def test_matrix_multiplication():
                 "add %%ecx %%edx",
                 "movl %%edx 12(%2)"
                 ]
+    print(len(instructions))
     matmul_instructions_encode = [game.assembly.instruction_encode(line) for line in instructions]
-    print(game.get_reward(matmul_instructions_encode))
+    # print(game.get_reward(matmul_instructions_encode))
 
 def test_matrix_encoder():
     game = MatrixMultiplication(32, 32) 
     print(game.assembly.instruction_decode(game.assembly.instruction_encode("imull %%eax %%ebx")))
 if __name__ == "__main__":
-    test_matrix_encoder()
+    train_on_swap_2_elements()

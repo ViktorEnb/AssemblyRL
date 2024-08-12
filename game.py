@@ -13,7 +13,7 @@ class Game:
     def get_reward(self, state):
         raise NotImplementedError
 
-    def get_actions(self, state):
+    def get_actions(self):
         raise NotImplementedError
 
     def is_terminal(self, state):
@@ -53,7 +53,7 @@ class ToyGameWithReprNetwork(Game):
             game = []
             state = 0
             while len(self.tree[state]) != 0:
-                action = random.choice(self.get_actions("whatever"))
+                action = random.choice(self.get_actions())
                 state = self.tree[state][action]
                 game.append((state, action))
             if game in self.random_games:

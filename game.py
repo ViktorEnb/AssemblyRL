@@ -98,7 +98,7 @@ class ToyGameWithReprNetwork(Game):
         return 2
     
     def get_valid_moves(self, node):
-        return torch.tensor([0,1])
+        return torch.tensor([1,1])
 
     def is_terminal(self, node):
         new_state = self.get_current_state(node)

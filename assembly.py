@@ -213,7 +213,7 @@ class AssemblyGame(Game):
     
     
     def get_actions(self):
-        return range(0, self.assembly.vocab_size)
+        return torch.arange(self.assembly.vocab_size)
 
     def is_terminal(self, node):
         #Check for END of program line

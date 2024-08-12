@@ -13,7 +13,7 @@ import numpy as np
 import time 
 
 class Agent:
-    def __init__(self, game, repr_size, action_dim, load=False):
+    def __init__(self, game, repr_size, action_dim, load=False, save=False):
         self.game = game
         self.mcts = MCTS(game)
         self.repr_size = repr_size
@@ -28,6 +28,7 @@ class Agent:
         if load:
             self.load_models(os.path.join(".", "saved_models", self.game.algo_name))
 
+        self.save = save
         self.replay = [] #List of played games and the rewards achieved
         self.batch_size = 1
         self.previous_best_reward = -float('inf')
@@ -62,10 +63,10 @@ class Agent:
             reward = self.game.get_reward(node)
             self.save_experience(node, reward)
             self.update_networks()
-            if i % 10 == 0:
-                self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
 
-            self.save_best_game(i)
+            if i % 10 == 0 and self.save:
+                self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
+                self.save_best_game(i)
 
             
     def save_experience(self, node, reward):
@@ -143,10 +144,12 @@ class Agent:
         self.training_time += time.time() - start_training
 
     def print_network_predictions(self):
+        #This only works at the moment if all moves in all states are valid
         unique_states = self.game.get_unique_states()
         for game in self.game.random_games:
             repr = self.game.initialize_state()
             logits = self.policy_network(repr)
+            # logits = torch.mul(logits, self.game.get_valid_moves(node))
             action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
             predicted_value = self.value_network(repr)
             print("State: ", 0, " Action probs: ", action_probs)
@@ -157,6 +160,8 @@ class Agent:
                 action_onehot[action] = 1
                 repr = self.game.repr_network(torch.concat((repr, action_onehot)))
                 logits = self.policy_network(repr)
+                # logits = torch.mul(logits, self.game.get_valid_moves(node))
+
                 action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
                 predicted_value = self.value_network(repr)
 
@@ -182,7 +187,11 @@ class Agent:
         nodes.append(node)
         while not self.game.is_terminal(node):
             logits = self.policy_network(node.state)
-            action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
+            action_probs = nn.functional.softmax(logits, dim=-1)
+            #Remove illegal moves
+            action_probs = torch.mul(action_probs, self.game.get_valid_moves(node)).detach().numpy()
+            action_probs = 1.0 / np.linalg.norm(action_probs) * action_probs
+
             index = np.argmax(action_probs)
             selected_action = self.game.get_actions()[index]
             # selected_action = np.random.choice(self.game.get_actions(), p=action_probs)

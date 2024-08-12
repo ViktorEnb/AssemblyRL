@@ -26,7 +26,11 @@ class MCTS:
         while not self.game.is_terminal(node):
             self.expand(node)
             logits = policy_network(node.state)
-            action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
+            action_probs = nn.functional.softmax(logits, dim=-1)
+            #Remove illegal moves
+            action_probs = torch.mul(action_probs, self.game.get_valid_moves(node)).detach().numpy()
+            action_probs = 1.0 / np.linalg.norm(action_probs) * action_probs
+
             action = np.random.choice(self.game.get_actions(), p=action_probs)
             for child in node.children:
                 if child.action == action:

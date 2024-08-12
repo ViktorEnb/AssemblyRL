@@ -184,8 +184,8 @@ class Agent:
             logits = self.policy_network(node.state)
             action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
             index = np.argmax(action_probs)
-            selected_action = self.game.get_actions(node)[index]
-            # selected_action = np.random.choice(self.game.get_actions(node), p=action_probs)
+            selected_action = self.game.get_actions()[index]
+            # selected_action = np.random.choice(self.game.get_actions(), p=action_probs)
             print("Selecting action: ", selected_action)
             node = Node(self.game.apply_action(node.state, selected_action), node, action=selected_action)
             nodes.append(node)

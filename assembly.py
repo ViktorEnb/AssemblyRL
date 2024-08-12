@@ -10,6 +10,7 @@ import time
 class Assembly:
     def __init__(self):
         pass
+
     def calculate_vocab_size(self):
         #Calculates the number of allowed assembly-lines
         self.vocab_size = 0
@@ -210,13 +211,9 @@ class AssemblyGame(Game):
 
         return reward
     
-
-    #Number of  allowed lines of assembly
-    def get_num_actions(self, state):
-        return self.assembly.vocab_size
     
-    def get_actions(self, node):
-        return range(0, self.get_num_actions(node.state))
+    def get_actions(self):
+        return range(0, self.assembly.vocab_size)
 
     def is_terminal(self, node):
         #Check for END of program line

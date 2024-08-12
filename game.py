@@ -88,10 +88,10 @@ class ToyGameWithReprNetwork(Game):
             return self.rewards[new_state]
         return 0
 
-    def get_actions(self, node):
+    def get_actions(self):
         return range(0,2)
     
-    def get_num_actions(self, state):
+    def get_num_actions(self):
         return 2
 
     def is_terminal(self, node):

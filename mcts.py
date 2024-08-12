@@ -27,7 +27,7 @@ class MCTS:
             self.expand(node)
             logits = policy_network(node.state)
             action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
-            action = np.random.choice(self.game.get_actions(node), p=action_probs)
+            action = np.random.choice(self.game.get_actions(), p=action_probs)
             for child in node.children:
                 if child.action == action:
                     node = child
@@ -54,7 +54,7 @@ class MCTS:
 
     def expand(self, node):
         state = node.state
-        actions = self.game.get_actions(node)
+        actions = self.game.get_actions()
         for action in actions:
             next_state = self.game.apply_action(node.state, action)
             child_node = Node(state=next_state, parent=node, action = action)

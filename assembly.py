@@ -22,8 +22,10 @@ class Assembly:
             for word in words:
                 if word == "REG":
                     possible_lines *= len(self.registers)
-                elif word == "MEM":
-                    possible_lines *= len(self.mem_locs)
+                elif word == "IMEM":
+                    possible_lines *= len(self.input_mem_locs)
+                elif word == "TMEM":
+                    possible_lines *= len(self.target_mem_locs)
             self.line_sizes.append(possible_lines)
             self.vocab_size += possible_lines
     
@@ -47,9 +49,11 @@ class Assembly:
                 if word_in_line == "REG" and word_in_instruction in self.registers:
                     remaining //= len(self.registers)
                     current_line_index += remaining * self.registers.index(word_in_instruction)
-                elif word_in_line == "MEM" and word_in_instruction in self.mem_locs:
-                    remaining //= len(self.mem_locs)
-                    current_line_index += remaining * self.mem_locs.index(word_in_instruction)
+                elif word_in_line == "IMEM" and word_in_instruction in self.input_mem_locs:
+                    remaining //= len(self.input_mem_locs)
+                    current_line_index += remaining * self.input_mem_locs.index(word_in_instruction)
+                elif word_in_line == "TMEM" and word_in_instruction in self.target_mem_locs:
+                    remaining //= len(self.target_mem_locs)
                 elif word_in_line == word_in_instruction:
                     pass
                 else:
@@ -83,9 +87,12 @@ class Assembly:
             if word == "REG":
                 instruction.append(self.registers[num % len(self.registers)])
                 num = (num - num % len(self.registers)) // len(self.registers)
-            elif word == "MEM":
-                instruction.append(self.mem_locs[num % len(self.mem_locs)])
-                num = (num - num % len(self.mem_locs)) // len(self.mem_locs)
+            elif word == "IMEM":
+                instruction.append(self.input_mem_locs[num % len(self.input_mem_locs)])
+                num = (num - num % len(self.input_mem_locs)) // len(self.input_mem_locs)
+            elif word == "TMEM":
+                instruction.append(self.target_mem_locs[num % len(self.target_mem_locs)])
+                num = (num - num % len(self.target_mem_locs)) // len(self.target_mem_locs)
             else:
                 instruction.append(word)
             

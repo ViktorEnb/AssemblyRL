@@ -56,7 +56,6 @@ class MCTS:
         return random.choice(best_nodes)
 
     def expand(self, node):
-        state = node.state
         actions = self.game.get_actions()
         for action in actions:
             next_state = self.game.apply_action(node.state, action.item())

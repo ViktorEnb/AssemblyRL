@@ -23,10 +23,11 @@ class Swap2Elements(AssemblyGame):
         for action in range(dim):
             words = self.assembly.decode(action).split(" ")
             if words[0] == "movl" and words[3] in self.assembly.registers:
-                if words[2] in reg_src_map:
-                    reg_src_map[words[3]].append(action)
+                if words[3] in reg_src_map:
+                    reg_src_map[words[3]][action] = 1
                 else:
-                    reg_src_map[words[3]] = [action]
+                    reg_src_map[words[3]] = torch.zeros(dim)
+                    reg_src_map[words[3]][action] = 1
 
         for action in range(dim):
             words = self.assembly.decode(action).split(" ")
@@ -35,8 +36,8 @@ class Swap2Elements(AssemblyGame):
                 self.illegal_moves_matrix[action, :] = 0
             
             #Don't allow to mov un handled registers
-            if words[0] == "movl" and words[1] in self.assembly.registers:
-                self.illegal_moves_matrix[action, :] = torch.tensor(reg_src_map[words[1]])
+            elif words[0] == "movl" and words[1] in self.assembly.registers:
+                self.illegal_moves_matrix[action, :] = reg_src_map[words[1]]
 
 
 
@@ -44,18 +45,19 @@ class Swap2Elements(AssemblyGame):
         self.algo_name = "swap2elements"
 
     def get_legal_moves(self, node):
-        previous_moves = torch.ones(self.get_num_actions()) * 1.0 / (self.get_num_actions() + 1)
+        previous_moves = torch.ones(self.get_num_actions()) * 1.0 / self.get_num_actions()
         while node.parent != None:
             previous_moves[node.action] = 1 
             node = node.parent
         ret = torch.matmul(self.illegal_moves_matrix, previous_moves)
         ret = torch.floor(ret)
         ret = torch.clamp(ret, max=1.0)
-        for i in range(len(previous_moves)):
-            if ret[i].item() == 1:
-                print(self.assembly.decode(i), "   legal")
-            else:
-                print(self.assembly.decode(i), "   illegal")
+
+        # for i in range(len(previous_moves)):
+        #     if ret[i].item() == 1:
+        #         print(self.assembly.decode(i), "   legal")
+        #     else:
+        #         print(self.assembly.decode(i), "   illegal")
         return ret
 
     def init_vocab(self):
@@ -63,12 +65,13 @@ class Swap2Elements(AssemblyGame):
         self.assembly.registers = ["%%eax", "%%ebx"]
 
         #Memory addresers for 2 arrays of length 2.
-        self.assembly.mem_locs = ["(%0)", "4(%0)", "(%1)", "4(%1)"]
+        self.assembly.target_mem_locs = ["(%1)", "4(%1)"]
+        self.assembly.input_mem_locs = ["(%0)", "4(%0)"]
             
         #All assembly instructions required for swapping 2 elements
         self.assembly.vocab = ["movl REG, REG",
-        "movl MEM, REG",
-        "movl REG, MEM",
+        "movl IMEM, REG",
+        "movl REG, TMEM",
         "END"
         ]
 

@@ -66,7 +66,7 @@ class Agent:
 
             if i % 10 == 0 and self.save:
                 self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
-                self.save_best_game(i)
+            self.save_best_game(i)
 
             
     def save_experience(self, node, reward):

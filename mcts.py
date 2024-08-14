@@ -28,9 +28,8 @@ class MCTS:
             logits = policy_network(node.state)
             action_probs = nn.functional.softmax(logits, dim=-1)
             #Remove illegal moves
-            action_probs = torch.mul(action_probs, self.game.get_valid_moves(node)).detach().numpy()
-            action_probs = 1.0 / np.linalg.norm(action_probs) * action_probs
-
+            action_probs = torch.mul(action_probs, self.game.get_legal_moves(node)).detach().numpy()
+            action_probs = 1.0 / sum(action_probs) * action_probs
             action = np.random.choice(self.game.get_actions(), p=action_probs)
             for child in node.children:
                 if child.action == action:
@@ -60,8 +59,8 @@ class MCTS:
         state = node.state
         actions = self.game.get_actions()
         for action in actions:
-            next_state = self.game.apply_action(node.state, action)
-            child_node = Node(state=next_state, parent=node, action = action)
+            next_state = self.game.apply_action(node.state, action.item())
+            child_node = Node(state=next_state, parent=node, action = action.item())
             node.add_child(child_node)
         node.is_expanded = True
 

@@ -16,7 +16,7 @@ class Game:
     def get_actions(self):
         raise NotImplementedError
     
-    def get_valid_moves(self, node):
+    def get_legal_moves(self, node):
         raise NotImplementedError
 
     def is_terminal(self, state):
@@ -97,7 +97,7 @@ class ToyGameWithReprNetwork(Game):
     def get_num_actions(self):
         return 2
     
-    def get_valid_moves(self, node):
+    def get_legal_moves(self, node):
         return torch.tensor([1,1])
 
     def is_terminal(self, node):

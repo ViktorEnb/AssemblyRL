@@ -27,7 +27,7 @@ class Assembly:
             self.line_sizes.append(possible_lines)
             self.vocab_size += possible_lines
     
-    def instruction_encode(self, instruction):
+    def encode(self, instruction):
         #Converts an assembly instruction in the vocabulary to a number
         #The idea is to have all instructions be iterable from 1 to the number of possible instructions
         self.previous_line_sizes = 0
@@ -60,7 +60,7 @@ class Assembly:
                 
             self.previous_line_sizes += self.line_sizes[i]
     
-    def instruction_decode(self, num):
+    def decode(self, num):
         #Converts a num to an assembly instruction
         cumulative = 0
         line_nr = -1
@@ -116,6 +116,11 @@ class AssemblyGame(Game):
         #Depends on the target algorithm
         raise NotImplementedError
     def init_vocab(self):
+        #Depends on the target algorithm
+        raise NotImplementedError
+    def set_illegal_moves(self):
+        #Used to prevent the agent from choosing obviously stupid moves
+        #in order to reduce computation
         #Depends on the target algorithm
         raise NotImplementedError
     def validate_test_cases(self):
@@ -211,6 +216,8 @@ class AssemblyGame(Game):
 
         return reward
     
+    def get_num_actions(self):
+        return self.assembly.vocab_size
     
     def get_actions(self):
         return torch.arange(self.assembly.vocab_size)
@@ -223,10 +230,10 @@ class AssemblyGame(Game):
         while node.parent != None:
             counter += 1
             node = node.parent
-        return counter >= 50    
+        return counter >= 7    
 
     def apply_action(self, state, action : int):
-        action_onehot = torch.zeros(self.get_num_actions(state))
+        action_onehot = torch.zeros(self.get_num_actions())
         action_onehot[action] = 1
         return self.repr_network(torch.cat((state, action_onehot)))
 
@@ -245,10 +252,11 @@ class AssemblyGame(Game):
             if len(actions) > 1:
                 f.write("__asm__ ( \n")
             for line in actions:
+                # print(, "   ", line, "   ", self.assembly.vocab_size)
                 #Check for END
                 if line == self.assembly.vocab_size - 1:
                     break
-                f.write("\"" + self.assembly.instruction_decode(line) + ";\" \n")
+                f.write("\"" + self.assembly.decode(line) + ";\" \n")
             if len(actions) > 1:
                 f.write(": \n")
                 f.write(": \"r\"(" + args.replace("int* ", "").replace(",", "),\"r\"(") + ")\n ")
@@ -304,6 +312,6 @@ class AssemblyGame(Game):
 
 if __name__ == "__main__":
     a = Assembly()
-    num = a.instruction_encode("mov %rbx -0x4(%rbp)")
+    num = a.encode("mov %rbx -0x4(%rbp)")
     print(num)
-    print(a.instruction_decode(num))
+    print(a.decode(num))

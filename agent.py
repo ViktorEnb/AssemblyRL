@@ -149,7 +149,7 @@ class Agent:
         for game in self.game.random_games:
             repr = self.game.initialize_state()
             logits = self.policy_network(repr)
-            # logits = torch.mul(logits, self.game.get_valid_moves(node))
+            # logits = torch.mul(logits, self.game.get_legal_moves(node))
             action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
             predicted_value = self.value_network(repr)
             print("State: ", 0, " Action probs: ", action_probs)
@@ -160,7 +160,7 @@ class Agent:
                 action_onehot[action] = 1
                 repr = self.game.repr_network(torch.concat((repr, action_onehot)))
                 logits = self.policy_network(repr)
-                # logits = torch.mul(logits, self.game.get_valid_moves(node))
+                # logits = torch.mul(logits, self.game.get_legal_moves(node))
 
                 action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
                 predicted_value = self.value_network(repr)
@@ -189,7 +189,7 @@ class Agent:
             logits = self.policy_network(node.state)
             action_probs = nn.functional.softmax(logits, dim=-1)
             #Remove illegal moves
-            action_probs = torch.mul(action_probs, self.game.get_valid_moves(node)).detach().numpy()
+            action_probs = torch.mul(action_probs, self.game.get_legal_moves(node)).detach().numpy()
             action_probs = 1.0 / np.linalg.norm(action_probs) * action_probs
 
             index = np.argmax(action_probs)

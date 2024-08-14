@@ -25,15 +25,15 @@ def train_on_swap_2_elements():
     #Make the results non-random to be able to test performance on different machines
     torch.manual_seed(1)
     game = Swap2Elements(repr_size, hidden_size)
-    agent = Agent(game, repr_size, game.get_num_actions("whatever"), load=False)
-    agent.train(num_iterations=10)  
+    agent = Agent(game, repr_size, game.get_num_actions(), load=False)
+    print(game.get_legal_moves(agent.mcts.root))
+    # agent.train(num_iterations=10)  
 
 def test_swap_2_elements():
     #Tests that basic assembly for swapping two numbers get 100% pass rate
     game = Swap2Elements(32, 32)
     swap_instructions = ["movl (%0) %%eax", "movl 4(%0) %%ebx", "movl %%ebx (%1)", "movl %%eax 4(%1)"]
-    swap_instructions_encode = [game.assembly.instruction_encode(line) for line in swap_instructions]
-    # game.write_game([1,2], filename="testing_test_cases.c")
+    swap_instructions_encode = [game.assembly.encode(line) for line in swap_instructions]
     print(game.get_reward(swap_instructions_encode))
 
 def test_matrix_multiplication():
@@ -80,11 +80,11 @@ def test_matrix_multiplication():
                 "movl %%edx 12(%2)"
                 ]
     print(len(instructions))
-    matmul_instructions_encode = [game.assembly.instruction_encode(line) for line in instructions]
+    matmul_instructions_encode = [game.assembly.encode(line) for line in instructions]
     # print(game.get_reward(matmul_instructions_encode))
 
 def test_matrix_encoder():
     game = MatrixMultiplication(32, 32) 
-    print(game.assembly.instruction_decode(game.assembly.instruction_encode("imull %%eax %%ebx")))
+    print(game.assembly.decode(game.assembly.encode("imull %%eax %%ebx")))
 if __name__ == "__main__":
-    train_on_toy_game()
+    train_on_swap_2_elements()

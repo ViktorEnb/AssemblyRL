@@ -45,6 +45,10 @@ class MCTS:
         best_nodes = []
         uct_values = []
         for child in node.children:
+            if self.game.get_legal_moves(node)[child.action] == 0:
+                #Never select illegal move
+                continue
+
             uct_value = (child.total_reward / (child.visit_count + 1e-6)) + C * np.sqrt(np.log(node.visit_count + 1) / (child.visit_count + 1e-6))
             if uct_value > best_value:
                 best_value = uct_value

@@ -114,11 +114,12 @@ class MatrixMultiplication(AssemblyGame):
             elif words[0] == "movl" and words[1] in self.assembly.registers:
                 self.illegal_moves_matrix[action, :] = reg_src_map[words[1]]
             
-            elif words[0] == "imull" and words[1] in self.assembly.registers:
-                self.illegal_moves_matrix[action, :] = reg_src_map[words[1]]
+            elif words[0] == "imull":
+                self.illegal_moves_matrix[action, :] = reg_src_map[words[1]] + reg_src_map[words[3]]
 
-            elif words[0] == "add" and words[1] in self.assembly.registers:
-                self.illegal_moves_matrix[action, :] = reg_src_map[words[1]]
+            elif words[0] == "add":
+                self.illegal_moves_matrix[action, :] = reg_src_map[words[1]] + reg_src_map[words[3]]
+            
 
     def get_legal_moves(self, node):
         previous_moves = torch.ones(self.get_num_actions()) * 1.0 / self.get_num_actions()

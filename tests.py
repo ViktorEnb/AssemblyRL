@@ -16,7 +16,7 @@ def train_on_toy_game():
     agent = Agent(game, repr_size, num_actions)
     agent.train(num_iterations=200)
     print("\n\n\n")
-    # agent.print_network_predictions()
+    agent.print_network_predictions()
     agent.play_game()
 
 
@@ -38,6 +38,8 @@ def train_on_swap_2_elements():
     game = Swap2Elements(repr_size, hidden_size)
     agent = Agent(game, repr_size, game.get_num_actions(), load=False)
     agent.train(num_iterations=10)  
+    agent.play_game()
+
 
 def test_swap_2_elements():
     #Tests that basic assembly for swapping two numbers get 100% pass rate

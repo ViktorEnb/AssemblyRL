@@ -14,3 +14,11 @@ class Node:
     def update(self, reward):
         self.visit_count += 1
         self.total_reward += reward
+    def get_all_actions(self):
+        node = self
+        actions = []
+        while node.parent != None:
+            actions.append({"action": node.action, "state": node.state})
+            node = node.parent
+        actions.reverse()
+        return actions

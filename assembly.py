@@ -237,7 +237,7 @@ class AssemblyGame(Game):
         while node.parent != None:
             counter += 1
             node = node.parent
-        return counter >= 7    
+        return counter >= 40    
 
     def apply_action(self, state, action : int):
         action_onehot = torch.zeros(self.get_num_actions())

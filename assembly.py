@@ -102,9 +102,13 @@ class AssemblyGame(Game):
         self.repr_optimizer = optim.Adam(self.repr_network.parameters(), lr=0.001)
         self.time_started = datetime.now() 
         self.generate_test_cases()
-        self.set_algo_name()
         if not self.validate_test_cases():
             print("Test cases are in the wrong format.")
+        self.set_algo_name()
+
+        self.write_main()
+        self.write_header_file()
+
     
     def initialize_state(self):
         return torch.zeros(self.repr_size)
@@ -185,10 +189,7 @@ class AssemblyGame(Game):
         if type(node) == type([]):
             actions = node
         else:           
-            while node.parent != None:
-                actions.append(node.action)
-                node = node.parent
-            actions.reverse()
+            actions = node.get_actions()
 
         self.write_game(actions, filename=os.path.join(".", "tmp", self.algo_name + ".c"))
         c_file_path = os.path.join(".", "tmp", self.algo_name + ".c")
@@ -239,15 +240,11 @@ class AssemblyGame(Game):
 
 
     def write_game(self, actions, filename, meta_info = []):
-        with open(filename, "w") as f:
-            f.write("#include <stdio.h> \n")
-            f.write("#include <stdlib.h> \n")
-            
-            #Create arguments to swap function
-            input_args = ["int* input" + str(k) for k in range(self.nrof_inputs)]
-            target_args = ["int* target" + str(k) for k in range(self.nrof_targets)]
-            args = ",".join(input_args + target_args)
-
+        #Create arguments to swap function
+        input_args = ["int* input" + str(k) for k in range(self.nrof_inputs)]
+        target_args = ["int* target" + str(k) for k in range(self.nrof_targets)]
+        args = ",".join(input_args + target_args)
+        with open(filename, "w") as f:   
             f.write("void " + self.algo_name + "(" + args + "){ \n")
             if len(actions) > 1:
                 f.write("__asm__ ( \n")
@@ -264,8 +261,20 @@ class AssemblyGame(Game):
                 f.write("); \n")
             f.write("} \n")
 
-            f.write("int main(int argc, char* argv[]){ \n")
 
+            if len(meta_info) > 0:
+                f.write("//META INFO \n")            
+            for line in meta_info:
+                f.write("//" + line + "\n")
+    def write_main(self):
+        #Create arguments to swap function
+        input_args = ["int* input" + str(k) for k in range(self.nrof_inputs)]
+        target_args = ["int* target" + str(k) for k in range(self.nrof_targets)]
+        args = ",".join(input_args + target_args)
+        with open("./tmp/main.c", "w") as f:   
+            f.write("#include <stdio.h> \n")
+            f.write("#include <stdlib.h> \n")
+            f.write("int main(int argc, char* argv[]){ \n")
             #Todo: change this to C for-loops. The generated code tends to get very long 
             # as it works now, which makes compile time increase
             for i in range(len(self.test_cases)):
@@ -303,12 +312,12 @@ class AssemblyGame(Game):
                         f.write("printf(\"%d,\", target" + str(j) + "[" + str(k) + "]); \n")
 
             f.write("} \n")
-
-            if len(meta_info) > 0:
-                f.write("//META INFO \n")            
-            for line in meta_info:
-                f.write("//" + line + "\n")
-
+    def write_header_file(self):
+        with open("./tmp/" + self.algo_name + ".h", "w") as f:
+            f.write("#IFNDEF SWAP_H \n")
+            f.write("#DEFINE SWAP_H \n")
+            f.write("void swap2elements(int* input0, int* target0); \n")
+            f.write("#endif")
 
 if __name__ == "__main__":
     a = Assembly()

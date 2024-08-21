@@ -60,7 +60,7 @@ class Agent:
             while not self.game.is_terminal(node):
                 for _ in range(50): 
                     end_node, reward = self.mcts.rollout(self.policy_network, self.value_network, node)
-                    game = {"game": end_node.get_all_actions(), "reward": reward}
+                    game = {"game": end_node.get_actions(), "reward": reward}
                     batch.append(game)
                     if reward > self.highest_reward:
                         current_best_game = game

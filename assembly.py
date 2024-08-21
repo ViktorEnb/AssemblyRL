@@ -7,6 +7,12 @@ from datetime import datetime
 import os
 import time 
 
+def compile_and_link(c_path, exe_path):
+    subprocess.run(["gcc", "-c", c_path, "-o", "./tmp/tmp.o"])
+    subprocess.run(["gcc", "./tmp/tmp.o", "./tmp/main.o", "-o", exe_path])
+
+
+
 class Assembly:
     def __init__(self):
         pass
@@ -115,6 +121,7 @@ class AssemblyGame(Game):
 
         self.write_main()
         self.write_header_file()
+        subprocess.run(["gcc", "-c", "./tmp/main.c", "-o", "./tmp/main.o"])
 
     
     def initialize_state(self):
@@ -196,20 +203,23 @@ class AssemblyGame(Game):
         if type(node) == type([]):
             actions = node
         else:           
-            actions = node.get_actions()
-
+            actions = []
+            while node.parent != None:
+                actions.append(node.action)
+                node = node.parent
+            actions.reverse()
         self.write_game(actions, filename=os.path.join(".", "tmp", self.algo_name + ".c"))
-        c_file_path = os.path.join(".", "tmp", self.algo_name + ".c")
-        exe_file_path = os.path.join(".", "tmp", self.algo_name + ".exe")
-        subprocess.run(["gcc", "-o", exe_file_path, c_file_path])
+        c_path = os.path.join(".", "tmp", self.algo_name + ".c")
+        exe_path = os.path.join(".", "tmp", self.algo_name + ".exe")
+        compile_and_link(c_path, exe_path)
         printf = ""
         try:
-            printf = subprocess.run([exe_file_path], capture_output=True, text=True).stdout
+            printf = subprocess.run([exe_path], capture_output=True, text=True).stdout
         except Exception:
             #Just try again
             time.sleep(1)
-            subprocess.run(["gcc", "-o", exe_file_path, c_file_path])
-            printf = subprocess.run([exe_file_path], capture_output=True, text=True).stdout
+            compile_and_run(c_path, exe_path)
+            printf = subprocess.run([exe_path], capture_output=True, text=True).stdout
         
         passed_cases = self.get_nrof_passed_test_cases(printf)
         reward = passed_cases
@@ -238,7 +248,7 @@ class AssemblyGame(Game):
         while node.parent != None:
             counter += 1
             node = node.parent
-        return counter >= 40    
+        return counter >= self.max_lines    
 
     def apply_action(self, state, action : int):
         action_onehot = torch.zeros(self.get_num_actions())
@@ -281,6 +291,7 @@ class AssemblyGame(Game):
         with open("./tmp/main.c", "w") as f:   
             f.write("#include <stdio.h> \n")
             f.write("#include <stdlib.h> \n")
+            f.write("#include \"" + self.algo_name + ".h\" \n")
             f.write("int main(int argc, char* argv[]){ \n")
             #Todo: change this to C for-loops. The generated code tends to get very long 
             # as it works now, which makes compile time increase
@@ -321,8 +332,9 @@ class AssemblyGame(Game):
             f.write("} \n")
     def write_header_file(self):
         with open("./tmp/" + self.algo_name + ".h", "w") as f:
-            f.write("#IFNDEF SWAP_H \n")
-            f.write("#DEFINE SWAP_H \n")
+            f.write("#ifndef " + self.algo_name.upper() + "_H \n")
+            f.write("#define " + self.algo_name.upper() + "_H \n")
+            f.write("#include \"" + self.algo_name + ".h\" \n")
             f.write("void swap2elements(int* input0, int* target0); \n")
             f.write("#endif")
 

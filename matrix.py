@@ -77,6 +77,7 @@ class Swap2Elements(AssemblyGame):
 
         self.assembly.calculate_vocab_size()
         self.set_illegal_moves()
+        self.max_lines = 7
 
 class MatrixMultiplication(AssemblyGame):
     def generate_test_cases(self):
@@ -158,3 +159,5 @@ class MatrixMultiplication(AssemblyGame):
         self.assembly.calculate_vocab_size()
 
         self.set_illegal_moves()
+        
+        self.max_lines = 40

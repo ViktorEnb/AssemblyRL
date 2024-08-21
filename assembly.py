@@ -8,8 +8,8 @@ import os
 import time 
 
 def compile_and_link(c_path, exe_path):
-    subprocess.run(["gcc", "-c", c_path, "-o", "./tmp/tmp.o"])
-    subprocess.run(["gcc", "./tmp/tmp.o", "./tmp/main.o", "-o", exe_path])
+    subprocess.run(["gcc", "-O0", "-c", c_path, "-o", "./tmp/tmp.o"], check=True)
+    subprocess.run(["gcc", "./tmp/tmp.o", "./tmp/main.o", "-o", exe_path], check=True)
 
 
 

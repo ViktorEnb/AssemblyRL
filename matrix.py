@@ -49,7 +49,7 @@ class Swap2Elements(AssemblyGame):
                 self.illegal_moves_matrix[action, :] = reg_src_map[words[1]]
 
             #Don't allow multiple mov's to the same target
-            
+
             #It's only allowed to move to a target
             #If the src reg has been filled AND we haven't allocated to this space before
             #If you think about this works (think about the -0.8 and 1 really hard and it makes sense)
@@ -95,18 +95,24 @@ class MatrixMultiplication(AssemblyGame):
     def set_illegal_moves(self):
         dim = self.get_num_actions()
         self.illegal_moves_matrix = torch.ones((dim,dim))
-        #Maps registers to instructions which have register as dest
-        reg_dest_map = {}
-        
-        
+        #Maps registers to instructions which have register as source
+        reg_src_map = {}
+        #Maps targets to instructions which have targets as dest
+        target_dest_map = {}
         for action in range(dim):
             words = self.assembly.decode(action).split(" ")
             if words[0] == "movl" and words[3] in self.assembly.registers:
-                if words[3] in reg_dest_map:
-                    reg_dest_map[words[3]][action] = 1
+                if words[3] in reg_src_map:
+                    reg_src_map[words[3]][action] = 1
                 else:
-                    reg_dest_map[words[3]] = torch.zeros(dim)
-                    reg_dest_map[words[3]][action] = 1
+                    reg_src_map[words[3]] = torch.zeros(dim)
+                    reg_src_map[words[3]][action] = 1
+            if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
+                if words[3] in target_dest_map:
+                    target_dest_map[words[3]][action] = -0.8
+                else:
+                    target_dest_map[words[3]] = torch.zeros(dim)
+                    target_dest_map[words[3]][action] = -0.8
 
         for action in range(dim):
             words = self.assembly.decode(action).split(" ")
@@ -123,6 +129,14 @@ class MatrixMultiplication(AssemblyGame):
 
             elif words[0] == "add":
                 self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] + reg_dest_map[words[3]]
+
+            #Don't allow multiple mov's to the same target
+
+            #It's only allowed to move to a target
+            #If the src reg has been filled AND we haven't allocated to this space before
+            #If you think about this works (think about the -0.8 and 1 really hard and it makes sense)
+            if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
+                self.illegal_moves_matrix[action, :] = reg_src_map[words[1]] + target_dest_map[words[3]]
 
 
 

@@ -255,6 +255,24 @@ class AssemblyGame(Game):
         action_onehot[action] = 1
         return self.repr_network(torch.cat((state, action_onehot)))
 
+    def get_legal_moves(self, node):
+        previous_moves = torch.ones(self.get_num_actions()) * 1.0 / self.get_num_actions()
+        while node.parent != None:
+            previous_moves[node.action] = 1 
+            node = node.parent
+        
+        ret = torch.matmul(self.illegal_moves_matrix, previous_moves)
+        ret = torch.floor(ret)
+        ret = torch.clamp(ret, max=1.0, min=0.0)
+
+        #Below is a nice print for debugging information when creating a new target algorithm
+
+        # for i in range(len(previous_moves)):
+        #     if ret[i].item() == 1:
+        #         print(self.assembly.decode(i), "   legal")
+        #     else:
+        #         print(self.assembly.decode(i), "   illegal")
+        return ret
 
     def write_game(self, actions, filename, meta_info = []):
         #Create arguments to swap function

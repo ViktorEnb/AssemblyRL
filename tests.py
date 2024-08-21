@@ -28,7 +28,8 @@ def test_legal_moves():
     game = Swap2Elements(repr_size, hidden_size)
     agent = Agent(game, repr_size, game.get_num_actions(), load=False)
     agent.mcts.expand(agent.mcts.root)
-    print(game.get_legal_moves(agent.mcts.root.children[4]))
+    agent.mcts.expand(agent.mcts.root.children[4])
+    print(game.get_legal_moves(agent.mcts.root.children[4].children[8]))
 
 def train_on_swap_2_elements():
     repr_size = 32

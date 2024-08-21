@@ -39,12 +39,18 @@ class MCTS:
         # 4. Backpropagation
         self.backpropagate(node, reward)
 
+        return node, reward.item()
+
     def select(self, node):
         C = 1.41  # Exploration parameter
         best_value = -float('inf')
         best_nodes = []
         uct_values = []
         for child in node.children:
+            if self.game.get_legal_moves(node)[child.action] == 0:
+                #Never select illegal move
+                continue
+
             uct_value = (child.total_reward / (child.visit_count + 1e-6)) + C * np.sqrt(np.log(node.visit_count + 1) / (child.visit_count + 1e-6))
             if uct_value > best_value:
                 best_value = uct_value
@@ -56,7 +62,6 @@ class MCTS:
         return random.choice(best_nodes)
 
     def expand(self, node):
-        state = node.state
         actions = self.game.get_actions()
         for action in actions:
             next_state = self.game.apply_action(node.state, action.item())
@@ -85,7 +90,10 @@ class MCTS:
         
         # Calculate softmax probabilities
         probabilities = self.softmax(visit_counts)
-        
+        probabilities = np.multiply(probabilities, self.game.get_legal_moves(node).detach().numpy())
+        probabilities = 1.0 / sum(probabilities) * probabilities
+
+
         # Select a child based on the softmax probabilities
         selected_index = np.random.choice(len(node.children), p=probabilities)
         return node.children[selected_index]

@@ -16,9 +16,20 @@ def train_on_toy_game():
     agent = Agent(game, repr_size, num_actions)
     agent.train(num_iterations=200)
     print("\n\n\n")
-    # agent.print_network_predictions()
+    agent.print_network_predictions()
     agent.play_game()
-    
+
+
+def test_legal_moves():
+    repr_size = 32
+    hidden_size = 32
+    #Make the results non-random to be able to test performance on different machines
+    torch.manual_seed(1)
+    game = Swap2Elements(repr_size, hidden_size)
+    agent = Agent(game, repr_size, game.get_num_actions(), load=False)
+    agent.mcts.expand(agent.mcts.root)
+    print(game.get_legal_moves(agent.mcts.root.children[4]))
+
 def train_on_swap_2_elements():
     repr_size = 32
     hidden_size = 32
@@ -26,8 +37,9 @@ def train_on_swap_2_elements():
     torch.manual_seed(1)
     game = Swap2Elements(repr_size, hidden_size)
     agent = Agent(game, repr_size, game.get_num_actions(), load=False)
-    print(game.get_legal_moves(agent.mcts.root))
-    # agent.train(num_iterations=10)  
+    agent.train(num_iterations=10)  
+    agent.play_game()
+
 
 def test_swap_2_elements():
     #Tests that basic assembly for swapping two numbers get 100% pass rate

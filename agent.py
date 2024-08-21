@@ -31,7 +31,7 @@ class Agent:
         self.save = save
         self.replay = [] #List of played games and the rewards achieved
         self.batch_size = 1
-        self.previous_best_reward = -float('inf')
+        self.highest_reward = -float('inf')
         self.update_policy = False
 
         self.training_time = 0 #Time spent training networks
@@ -48,61 +48,51 @@ class Agent:
 
 
     def train(self, num_iterations):
+        current_best_game = None
         for i in range(num_iterations):
             #It doesn't make sense to update the policy with a random value network
             if i >= 0:
                 self.update_policy = True
             print(i, "th iteration")
             self.mcts.reset()
+            batch = []
             node = self.mcts.root
             while not self.game.is_terminal(node):
                 for _ in range(50): 
-                    self.mcts.rollout(self.policy_network, self.value_network, node)
+                    end_node, reward = self.mcts.rollout(self.policy_network, self.value_network, node)
+                    game = {"game": end_node.get_all_actions(), "reward": reward}
+                    batch.append(game)
+                    if reward > self.highest_reward:
+                        current_best_game = game
+                        self.highest_reward = reward
                 node = self.mcts.select_best_action(node)
                 # print("Selected action: ", node.action)
             reward = self.game.get_reward(node)
-            self.save_experience(node, reward)
-            self.update_networks()
+            self.update_networks(batch)
 
             if i % 10 == 0 and self.save:
                 self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
-                self.save_best_game(i)
+            self.save_game(current_best_game, i)
 
-            
-    def save_experience(self, node, reward):
-        game = []
-        while node.parent != None:
-            game.append({"action": node.action, "state": node.state})
-            node = node.parent
-        game.reverse()
-        # print({"game": game, "reward": reward})
-        self.replay.append({"game": game, "reward": reward})
-    
-    def save_best_game(self,iteration):        
-        best_game = max(self.replay, key=lambda x: x['reward'])
+    def save_game(self, game, iteration):        
         actions = []
-        for d in best_game["game"]:
+        for d in game["game"]:
             actions.append(d["action"])
 
-        reward = round(best_game["reward"],2)
-        if reward <= self.previous_best_reward:
-            return
-
-        self.previous_best_reward = reward
-        filename = os.path.join(".", "best_algos", self.game.time_started.strftime("%m-%d-%H-%M") + self.game.algo_name, str(reward) + ".c")
-        
+        filename = os.path.join(".", "best_algos", self.game.time_started.strftime("%m-%d-%H-%M") + self.game.algo_name, str(self.highest_reward) + ".c")        
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
 
         total_time = (datetime.now() - self.game.time_started).seconds
         perc_training = self.training_time * 100.0 / total_time
-        self.game.write_game(actions, filename=filename, meta_info = ["Reward: " + str(reward), "Iteration: " + str(iteration), "Time since start: " + str(total_time) + " seconds", "Percentage of time updating networks: " + str(perc_training) + "%"])
+        self.game.write_game(actions, filename=filename, meta_info = ["Reward: " + str(self.highest_reward), "Iteration: " + str(iteration), "Time since start: " + str(total_time) + " seconds", "Percentage of time updating networks: " + str(perc_training) + "%"])
 
-    def update_networks(self):
-        if len(self.replay) < self.batch_size:
-            return
+    def update_networks(self, batch):
+        # if len(self.replay) < self.batch_size:
+        #     return
+        # batch = random.sample(self.replay, self.batch_size)
+
         start_training = time.time()
-        batch = random.sample(self.replay, self.batch_size)
 
         policy_loss = 0
         policy_loss_fn = torch.nn.CrossEntropyLoss()

@@ -228,9 +228,9 @@ class AssemblyGame(Game):
         if passed_cases == 100:
             reward += 50
             
-        #Give points for fast algorithm if the algorithm is atleast somewhat-correct
+        #Give up to 50 points for fast algorithm if the algorithm is atleast somewhat-correct
         if passed_cases >= 40:
-            reward += int(1.0 / ((len(actions) + 1)**(1/3)) * 50)
+            reward += 50.0 * (self.max_lines - len(actions) + self.min_lines) / self.max_lines
 
         return reward
     

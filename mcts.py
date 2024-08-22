@@ -62,12 +62,15 @@ class MCTS:
         return random.choice(best_nodes)
 
     def expand(self, node):
+        if node.is_expanded:
+            return
+            
+        node.is_expanded = True
         actions = self.game.get_actions()
         for action in actions:
             next_state = self.game.apply_action(node.state, action.item())
             child_node = Node(state=next_state, parent=node, action = action.item())
             node.add_child(child_node)
-        node.is_expanded = True
 
 
     def backpropagate(self, node, reward):

@@ -11,6 +11,7 @@ import os
 import random
 import numpy as np
 import time 
+import concurrent.futures
 
 class Agent:
     def __init__(self, game, repr_size, action_dim, load=False, save=False):
@@ -35,6 +36,7 @@ class Agent:
         self.update_policy = False
 
         self.training_time = 0 #Time spent training networks
+        self.max_threads = 5
 
 
     def get_action(self, node):
@@ -49,6 +51,7 @@ class Agent:
 
     def train(self, num_iterations):
         current_best_game = None
+        thread_counter = 0
         for i in range(num_iterations):
             #It doesn't make sense to update the policy with a random value network
             if i >= 0:
@@ -58,15 +61,26 @@ class Agent:
             batch = []
             node = self.mcts.root
             while not self.game.is_terminal(node):
-                for _ in range(50): 
-                    end_node, reward = self.mcts.rollout(self.policy_network, self.value_network, node)
-                    game = {"game": end_node.get_actions(), "reward": reward}
-                    batch.append(game)
-                    if reward > self.highest_reward:
-                        current_best_game = game
-                        self.highest_reward = reward
+                with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                    # Submit tasks to the executor using a lambda function
+                    futures = [
+                        executor.submit(
+                            lambda: self.mcts.rollout(self.policy_network, self.value_network, node)
+                        )
+                        for _ in range(50)
+                    ]
+                    
+                    # As each thread completes, process the results
+                    for future in concurrent.futures.as_completed(futures):
+                        end_node, reward = future.result()
+                        game = {"game": end_node.get_actions(), "reward": reward}
+                        batch.append(game)
+                        
+                        if reward > self.highest_reward:
+                            current_best_game = game
+                            self.highest_reward = reward
+                print("hello")
                 node = self.mcts.select_best_action(node)
-                # print("Selected action: ", node.action)
             reward = self.game.get_reward(node)
             self.update_networks(batch)
 
@@ -164,7 +178,6 @@ class Agent:
         #Print before training values
         self.print_network_predictions()
 
-        #Sample 100 batches
         for i in range(1000):
             self.update_networks()
         print("\n\n\n")

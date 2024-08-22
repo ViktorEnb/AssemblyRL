@@ -7,9 +7,14 @@ from datetime import datetime
 import os
 import time 
 
-def compile_and_link(c_path, exe_path):
-    subprocess.run(["gcc", "-O0", "-c", c_path, "-o", "./tmp/tmp.o"], check=True)
-    subprocess.run(["gcc", "./tmp/tmp.o", "./tmp/main.o", "-o", exe_path], check=True)
+def compile_and_link(c_path, exe_path, num=0):
+    subprocess.run(["gcc", "-O0", "-c", c_path, "-o", "./tmp/tmp" + str(num) + ".o"], check=True)
+    subprocess.run(["gcc", "./tmp/tmp" + str(num) + ".o", "./tmp/main.o", "-o", exe_path], check=True)
+
+def delete_files(name, num):
+    os.remove("./tmp/" + name + str(num) + ".c")
+    os.remove("./tmp/tmp" + str(num) + ".o")
+    os.remove("./tmp/"+ name + str(num) + ".exe")
 
 
 
@@ -122,6 +127,7 @@ class AssemblyGame(Game):
         self.write_main()
         self.write_header_file()
         subprocess.run(["gcc", "-c", "./tmp/main.c", "-o", "./tmp/main.o"])
+        self.current_files = []
 
     
     def initialize_state(self):
@@ -198,7 +204,8 @@ class AssemblyGame(Game):
     
     #Runs the assembly program and calculates reward based on 
     #correctness and time of execution
-    def get_reward(self, node):
+    #Best possible score is 200
+    def get_reward(self, node, thread=0):
         actions = []
         if type(node) == type([]):
             actions = node
@@ -208,23 +215,34 @@ class AssemblyGame(Game):
                 actions.append(node.action)
                 node = node.parent
             actions.reverse()
-        self.write_game(actions, filename=os.path.join(".", "tmp", self.algo_name + ".c"))
-        c_path = os.path.join(".", "tmp", self.algo_name + ".c")
-        exe_path = os.path.join(".", "tmp", self.algo_name + ".exe")
-        compile_and_link(c_path, exe_path)
+        #Since this is multi-threaded it's important that we don't write over the same file in 
+        #Different threads
+        num = 0
+        while num in self.current_files:
+            num += 1
+        self.current_files.append(num)
+
+        self.write_game(actions, filename=os.path.join(".", "tmp", self.algo_name + str(num) + ".c"))
+        c_path = os.path.join(".", "tmp", self.algo_name + str(num) + ".c")
+        exe_path = os.path.join(".", "tmp", self.algo_name + str(num) + ".exe")
+        compile_and_link(c_path, exe_path, num)
         printf = ""
         try:
             printf = subprocess.run([exe_path], capture_output=True, text=True).stdout
         except Exception:
             #Just try again
             time.sleep(1)
-            compile_and_run(c_path, exe_path)
+            compile_and_run(c_path, exe_path, num)
             printf = subprocess.run([exe_path], capture_output=True, text=True).stdout
         
+        self.current_files.remove(num)
+        delete_files(self.algo_name, num)
+
         passed_cases = self.get_nrof_passed_test_cases(printf)
         reward = passed_cases
 
-        #Give extra points for passing all tests making it impossible for a fast but wrong algorithm to beat a slow but correct algorithm
+        #Give extra points for passing all tests making it impossible for a fast 
+        #but wrong algorithm to beat a slow but correct algorithm
         if passed_cases == 100:
             reward += 50
             

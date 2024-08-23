@@ -123,7 +123,10 @@ class AssemblyGame(Game):
         if not self.validate_test_cases():
             print("Test cases are in the wrong format.")
         self.set_algo_name()
-
+        for filename in os.listdir("./tmp"):
+            file_path = os.path.join("./tmp", filename)
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
         self.write_main()
         self.write_header_file()
         subprocess.run(["gcc", "-c", "./tmp/main.c", "-o", "./tmp/main.o"])
@@ -205,7 +208,6 @@ class AssemblyGame(Game):
     #Runs the assembly program and calculates reward based on 
     #correctness and time of execution
     #Best possible score is 200
-    @profile
     def get_reward(self, node, thread=0):
         actions = []
         if type(node) == type([]):

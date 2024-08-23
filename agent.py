@@ -61,7 +61,7 @@ class Agent:
             batch = []
             node = self.mcts.root
             while not self.game.is_terminal(node):
-                with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
                     # Submit tasks to the executor using a lambda function
                     futures = [
                         executor.submit(
@@ -185,6 +185,7 @@ class Agent:
         self.print_network_predictions()
 
     def play_game(self):
+        #This is not guranteed to work anymore
         nodes = []
         node = Node(self.game.initialize_state(), None)
         nodes.append(node)

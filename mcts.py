@@ -9,7 +9,6 @@ class MCTS:
     def __init__(self, game):
         self.game = game
         self.root = Node(state=self.game.initialize_state(), parent=None)
-
     @profile
     def rollout(self, policy_network, value_network, node, _lambda = 0):
         # 1. Selection with UCB
@@ -19,12 +18,15 @@ class MCTS:
                 continue
             node = self.select(node)
         
-        # 2. Use value network for more accurate reward estimate        
-        reward = _lambda * value_network(node.state)
-        if _lambda == 1:
-            self.expand(node)
-            self.backpropagate(node, reward)
-            return 
+        # 2. Use value network for more accurate reward estimate  
+        reward = torch.tensor([0.0])
+        if _lambda > 0:    
+            self.expand(node)     
+            reward += _lambda * value_network(node.state)
+            if _lambda == 1:
+                self.expand(node)
+                self.backpropagate(node, reward)
+                return 
         
         # 3. Simulating a reward
         while not self.game.is_terminal(node):
@@ -64,15 +66,19 @@ class MCTS:
                 best_nodes.append(child)
             uct_values.append(uct_value)
         return random.choice(best_nodes)
-
+    
+    @profile
     def expand(self, node):
         if node.is_expanded or node.is_expanding:
             return
         node.is_expanding = True
+        #Only give a node a state if it's expanded. This is a way to optimize
+        #in case of many children per node
+        if node.state == None:
+            node.state = self.game.apply_action(node.parent.state, node.action)
         actions = self.game.get_actions()
         for action in actions:
-            next_state = self.game.apply_action(node.state, action.item())
-            child_node = Node(state=next_state, parent=node, action = action.item())
+            child_node = Node(state=None, parent=node, action = action.item())
             node.add_child(child_node)
         node.is_expanding = False
         node.is_expanded = True

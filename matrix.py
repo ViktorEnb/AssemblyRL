@@ -3,7 +3,7 @@ import torch
 
 
 #Very basic algorithm used for testing
-#My computer can find the optimal solution in about 10 minutes
+#My computer can find the optimal solution in about 10 minutes (30 seconds after various optimizations :))
 class Swap2Elements(AssemblyGame):
     def generate_test_cases(self):
         #Has to be modified based on the target algorithm
@@ -52,7 +52,7 @@ class Swap2Elements(AssemblyGame):
 
             #It's only allowed to move to a target
             #If the src reg has been filled AND we haven't allocated to this space before
-            #If you think about this works (think about the -0.8 and 1 really hard and it makes sense)
+            #If you think about it this works (think about the -0.8 and 1 really hard and it makes sense)
             if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
                 self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] + target_dest_map[words[3]]
 
@@ -135,7 +135,7 @@ class MatrixMultiplication(AssemblyGame):
 
             #It's only allowed to move to a target
             #If the src reg has been filled AND we haven't allocated to this space before
-            #If you think about this works (think about the -0.8 and 1 really hard and it makes sense)
+            #If you think about it this works (think about the -0.8 and 1 really hard and it makes sense)
             if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
                 self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] + target_dest_map[words[3]]
 

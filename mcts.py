@@ -10,9 +10,10 @@ class MCTS:
         self.game = game
         self.root = Node(state=self.game.initialize_state(), parent=None)
 
+    @profile
     def rollout(self, policy_network, value_network, node, _lambda = 0):
         # 1. Selection with UCB
-        while node.is_expanded and not self.game.is_terminal(node):
+        while (node.is_expanded or node.is_expanding) and not self.game.is_terminal(node):
             #Wait for node to expand in another thread
             while node.is_expanding:
                 continue

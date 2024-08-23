@@ -205,6 +205,7 @@ class AssemblyGame(Game):
     #Runs the assembly program and calculates reward based on 
     #correctness and time of execution
     #Best possible score is 200
+    @profile
     def get_reward(self, node, thread=0):
         actions = []
         if type(node) == type([]):
@@ -367,11 +368,14 @@ class AssemblyGame(Game):
 
             f.write("} \n")
     def write_header_file(self):
+        input_args = ["int* input" + str(k) for k in range(self.nrof_inputs)]
+        target_args = ["int* target" + str(k) for k in range(self.nrof_targets)]
+        args = ",".join(input_args + target_args)
         with open("./tmp/" + self.algo_name + ".h", "w") as f:
             f.write("#ifndef " + self.algo_name.upper() + "_H \n")
             f.write("#define " + self.algo_name.upper() + "_H \n")
             f.write("#include \"" + self.algo_name + ".h\" \n")
-            f.write("void swap2elements(int* input0, int* target0); \n")
+            f.write("void " + self.algo_name + "(" + args + "); \n")
             f.write("#endif")
 
 if __name__ == "__main__":

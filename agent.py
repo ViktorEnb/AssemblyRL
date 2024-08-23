@@ -80,7 +80,8 @@ class Agent:
                             current_best_game = game
                             self.highest_reward = reward
                 node = self.mcts.select_best_action(node)
-            reward = self.game.get_reward(node)
+            reward = current_best_game["reward"]
+            print("Got reward ", reward)
             self.update_networks(batch)
 
             if i % 10 == 0 and self.save:

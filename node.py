@@ -6,6 +6,7 @@ class Node:
         self.visit_count = 0
         self.total_reward = 0
         self.is_expanded = False
+        self.is_expanding = False
         self.action = action
 
     def add_child(self, child_node):

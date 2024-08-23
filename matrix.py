@@ -18,7 +18,7 @@ class Swap2Elements(AssemblyGame):
     def set_illegal_moves(self):
         dim = self.get_num_actions()
         self.illegal_moves_matrix = torch.ones((dim,dim))
-        #Maps registers to instructions which have register as source
+        #Maps registers to instructions which have register as dest
         reg_dest_map = {}
         #Maps targets to instructions which have targets as dest
         target_dest_map = {}
@@ -96,7 +96,7 @@ class MatrixMultiplication(AssemblyGame):
     def set_illegal_moves(self):
         dim = self.get_num_actions()
         self.illegal_moves_matrix = torch.ones((dim,dim))
-        #Maps registers to instructions which have register as source
+        #Maps registers to instructions which have register as dest
         reg_dest_map = {}
         #Maps targets to instructions which have targets as dest
         target_dest_map = {}

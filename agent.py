@@ -79,7 +79,6 @@ class Agent:
                         if reward > self.highest_reward:
                             current_best_game = game
                             self.highest_reward = reward
-                print("hello")
                 node = self.mcts.select_best_action(node)
             reward = self.game.get_reward(node)
             self.update_networks(batch)

@@ -6,6 +6,7 @@ import subprocess
 from datetime import datetime
 import os
 import time 
+import threading
 
 def compile_and_link(c_path, exe_path, num=0):
     subprocess.run(["gcc", "-O0", "-c", c_path, "-o", "./tmp/tmp" + str(num) + ".o"], check=True)
@@ -220,10 +221,12 @@ class AssemblyGame(Game):
             actions.reverse()
         #Since this is multi-threaded it's important that we don't write over the same file in 
         #Different threads
-        num = 0
-        while num in self.current_files:
-            num += 1
-        self.current_files.append(num)
+        self.file_lock = threading.Lock()
+        with self.file_lock:
+            num = 0
+            while num in self.current_files:
+                num += 1
+            self.current_files.append(num)
 
         self.write_game(actions, filename=os.path.join(".", "tmp", self.algo_name + str(num) + ".c"))
         c_path = os.path.join(".", "tmp", self.algo_name + str(num) + ".c")
@@ -238,8 +241,8 @@ class AssemblyGame(Game):
             compile_and_run(c_path, exe_path, num)
             printf = subprocess.run([exe_path], capture_output=True, text=True).stdout
         
-        self.current_files.remove(num)
         delete_files(self.algo_name, num)
+        self.current_files.remove(num)
 
         passed_cases = self.get_nrof_passed_test_cases(printf)
         reward = passed_cases

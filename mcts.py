@@ -9,7 +9,7 @@ class MCTS:
     def __init__(self, game):
         self.game = game
         self.root = Node(state=self.game.initialize_state(), parent=None)
-    @profile
+
     def rollout(self, policy_network, value_network, node, _lambda = 0):
         # 1. Selection with UCB
         while (node.is_expanded or node.is_expanding) and not self.game.is_terminal(node):
@@ -67,7 +67,7 @@ class MCTS:
             uct_values.append(uct_value)
         return random.choice(best_nodes)
     
-    @profile
+
     def expand(self, node):
         if node.is_expanded or node.is_expanding:
             return

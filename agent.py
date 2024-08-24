@@ -67,7 +67,7 @@ class Agent:
                         executor.submit(
                             lambda: self.mcts.rollout(self.policy_network, self.value_network, node)
                         )
-                        for _ in range(50)
+                        for _ in range(100)
                     ]
                     
                     # As each thread completes, process the results

@@ -67,7 +67,7 @@ class Agent:
                         executor.submit(
                             lambda: self.mcts.rollout(self.policy_network, self.value_network, node)
                         )
-                        for _ in range(100)
+                        for _ in range(30)
                     ]
                     
                     # As each thread completes, process the results
@@ -185,11 +185,13 @@ class Agent:
         self.print_network_predictions()
 
     def play_game(self):
-        #This is not guranteed to work anymore
         nodes = []
         node = Node(self.game.initialize_state(), None)
         nodes.append(node)
         while not self.game.is_terminal(node):
+            #With the optimizations made every node is not guranteed to have a state
+            if node.state == None:
+                node.state = self.game.apply_action(node.parent.state, node.action)
             logits = self.policy_network(node.state)
             action_probs = nn.functional.softmax(logits, dim=-1)
             #Remove illegal moves

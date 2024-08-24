@@ -52,9 +52,9 @@ class Swap2Elements(AssemblyGame):
 
             #It's only allowed to move to a target
             #If the src reg has been filled AND we haven't allocated to this space before
-            #If you think about it this works (think about the -0.8 and 1 really hard and it makes sense)
+            #If you think about it this works
             if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
-                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] + target_dest_map[words[3]]
+                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] + target_dest_map[words[3]]  * (sum(reg_dest_map[words[1]]) + 1)
 
 
 
@@ -110,10 +110,10 @@ class MatrixMultiplication(AssemblyGame):
                     reg_dest_map[words[3]][action] = 1
             if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
                 if words[3] in target_dest_map:
-                    target_dest_map[words[3]][action] = -0.8
+                    target_dest_map[words[3]][action] = -1
                 else:
                     target_dest_map[words[3]] = torch.zeros(dim)
-                    target_dest_map[words[3]][action] = -0.8
+                    target_dest_map[words[3]][action] = -1
 
         for action in range(dim):
             words = self.assembly.decode(action).split(" ")
@@ -135,9 +135,9 @@ class MatrixMultiplication(AssemblyGame):
 
             #It's only allowed to move to a target
             #If the src reg has been filled AND we haven't allocated to this space before
-            #If you think about it this works (think about the -0.8 and 1 really hard and it makes sense)
+            #If you think about it this works
             if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
-                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] + target_dest_map[words[3]]
+                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] + target_dest_map[words[3]] * (sum(reg_dest_map[words[1]]) + 1)
 
 
 

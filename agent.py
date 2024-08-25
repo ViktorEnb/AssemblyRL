@@ -86,7 +86,7 @@ class Agent:
 
             if i % 10 == 0 and self.save:
                 self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
-            self.save_game(current_best_game, i)
+            # self.save_game(current_best_game, i)
 
     def save_game(self, game, iteration):        
         actions = []

@@ -100,4 +100,4 @@ def test_matrix_encoder():
     game = MatrixMultiplication(32, 32) 
     print(game.assembly.decode(game.assembly.encode("imull %%eax %%ebx")))
 if __name__ == "__main__":
-    train_on_swap_2_elements()
+    train_on_toy_game()

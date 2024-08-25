@@ -17,7 +17,7 @@ class MCTS:
             while node.is_expanding:
                 continue
             node = self.select(node)
-        
+
         # 2. Use value network for more accurate reward estimate  
         reward = torch.tensor([0.0])
         if _lambda > 0:    
@@ -31,6 +31,8 @@ class MCTS:
         # 3. Simulating a reward
         while not self.game.is_terminal(node):
             self.expand(node)
+            while node.is_expanding:
+                continue
             logits = policy_network(node.state)
             action_probs = nn.functional.softmax(logits, dim=-1)
             #Remove illegal moves

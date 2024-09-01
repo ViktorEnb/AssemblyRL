@@ -14,11 +14,10 @@ import time
 import concurrent.futures
 
 class Agent:
-    def __init__(self, game, repr_size, action_dim, load=False, save=False):
+    def __init__(self, game, repr_size, hidden_size, action_dim, load=False, save=False):
         self.game = game
         self.mcts = MCTS(game)
         self.repr_size = repr_size
-        hidden_size = 32
         self.action_dim = action_dim
         self.device = ("cuda" if torch.cuda.is_available() else "cpu") #Not used at the moment as my cpu is faster than my gpu¨
         self.policy_network = Policy(repr_size, hidden_size, action_dim)

@@ -13,7 +13,7 @@ def train_on_toy_game():
     game = ToyGameWithReprNetwork()
     repr_size = 7
     num_actions = 2
-    agent = Agent(game, repr_size, num_actions)
+    agent = Agent(game, repr_size, repr_size, num_actions)
     agent.train(num_iterations=200)
     print("\n\n\n")
     agent.print_network_predictions()
@@ -26,7 +26,7 @@ def test_legal_moves():
     #Make the results non-random to be able to test performance on different machines
     torch.manual_seed(1)
     game = Swap2Elements(repr_size, hidden_size)
-    agent = Agent(game, repr_size, game.get_num_actions(), load=False)
+    agent = Agent(game, repr_size, hidden_size, game.get_num_actions(), load=False)
     agent.mcts.expand(agent.mcts.root)
     agent.mcts.expand(agent.mcts.root.children[4])
     print(game.get_legal_moves(agent.mcts.root.children[4].children[8]))
@@ -37,7 +37,7 @@ def train_on_swap_2_elements():
     #Make the results non-random to be able to test performance on different machines
     torch.manual_seed(1)
     game = Swap2Elements(repr_size, hidden_size)
-    agent = Agent(game, repr_size, game.get_num_actions(), load=False)
+    agent = Agent(game, repr_size, hidden_size, game.get_num_actions(), load=False)
     agent.train(num_iterations=10)  
     agent.play_game()
 
@@ -108,12 +108,12 @@ def test_load():
     hidden_size = 32
 
     game = Swap2Elements(repr_size, hidden_size)
-    agent = Agent(game, repr_size, game.get_num_actions(), load=False, save=True)
+    agent = Agent(game, repr_size, hidden_size, game.get_num_actions(), load=False, save=True)
     agent.train(num_iterations=1)  
     agent.play_game()
 
     new_game = Swap2Elements(repr_size, hidden_size)
-    loaded_agent = Agent(new_game, repr_size, new_game.get_num_actions(), load=True, save=False)
+    loaded_agent = Agent(new_game, repr_size, hidden_size, new_game.get_num_actions(), load=True, save=False)
     loaded_agent.play_game()  
 
 

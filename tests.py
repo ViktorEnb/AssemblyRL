@@ -99,5 +99,23 @@ def test_matrix_multiplication():
 def test_matrix_encoder():
     game = MatrixMultiplication(32, 32) 
     print(game.assembly.decode(game.assembly.encode("imull %%eax %%ebx")))
+
+def test_load():
+    #Make sure that agent.play_game() is the same as loaded_agent.play_game
+    #Be careful to not run this if you have an important model saved because
+    #this may overwrite it
+    repr_size = 32
+    hidden_size = 32
+
+    game = Swap2Elements(repr_size, hidden_size)
+    agent = Agent(game, repr_size, game.get_num_actions(), load=False, save=True)
+    agent.train(num_iterations=1)  
+    agent.play_game()
+
+    new_game = Swap2Elements(repr_size, hidden_size)
+    loaded_agent = Agent(new_game, repr_size, new_game.get_num_actions(), load=True, save=False)
+    loaded_agent.play_game()  
+
+
 if __name__ == "__main__":
-    train_on_toy_game()
+    test_load()

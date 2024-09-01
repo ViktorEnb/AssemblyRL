@@ -36,7 +36,7 @@ class Agent:
         self.update_policy = False
 
         self.training_time = 0 #Time spent training networks
-        self.max_threads = 5
+        self.max_threads = 2
 
 
     def get_action(self, node):
@@ -61,13 +61,13 @@ class Agent:
             batch = []
             node = self.mcts.root
             while not self.game.is_terminal(node):
-                with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_threads) as executor:
                     # Submit tasks to the executor using a lambda function
                     futures = [
                         executor.submit(
                             lambda: self.mcts.rollout(self.policy_network, self.value_network, node)
                         )
-                        for _ in range(30)
+                        for _ in range(100)
                     ]
                     
                     # As each thread completes, process the results
@@ -84,9 +84,9 @@ class Agent:
             print("Got reward ", reward)
             self.update_networks(batch)
 
-            if i % 10 == 0 and self.save:
+            if self.save:
                 self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
-            # self.save_game(current_best_game, i)
+            self.save_game(current_best_game, i)
 
     def save_game(self, game, iteration):        
         actions = []

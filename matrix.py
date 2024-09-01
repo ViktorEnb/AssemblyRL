@@ -32,12 +32,13 @@ class Swap2Elements(AssemblyGame):
                     reg_dest_map[words[3]][action] = 1
             if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
                 if words[3] in target_dest_map:
-                    target_dest_map[words[3]][action] = -0.8
+                    target_dest_map[words[3]][action] = -1
                 else:
                     target_dest_map[words[3]] = torch.zeros(dim)
-                    target_dest_map[words[3]][action] = -0.8
+                    target_dest_map[words[3]][action] = -1
 
-
+        #Reg_dest_map has to be known in get_legal_moves
+        self.reg_dest_map = reg_dest_map
         for action in range(dim):
             words = self.assembly.decode(action).split(" ")
             #Moving with the same src and dest is never allowed
@@ -54,7 +55,7 @@ class Swap2Elements(AssemblyGame):
             #If the src reg has been filled AND we haven't allocated to this space before
             #If you think about it this works
             if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
-                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] + target_dest_map[words[3]]  * (sum(reg_dest_map[words[1]]) + 1)
+                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]]*2 + target_dest_map[words[3]]  * (2*sum(reg_dest_map[words[1]]) + 1)
 
 
 
@@ -114,7 +115,8 @@ class MatrixMultiplication(AssemblyGame):
                 else:
                     target_dest_map[words[3]] = torch.zeros(dim)
                     target_dest_map[words[3]][action] = -1
-
+        #Reg_dest_map has to be known in get_legal_moves
+        self.reg_dest_map = reg_dest_map
         for action in range(dim):
             words = self.assembly.decode(action).split(" ")
             #Moving with the same src and dest is never allowed
@@ -137,7 +139,7 @@ class MatrixMultiplication(AssemblyGame):
             #If the src reg has been filled AND we haven't allocated to this space before
             #If you think about it this works
             if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
-                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] + target_dest_map[words[3]] * (sum(reg_dest_map[words[1]]) + 1)
+                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]]*2 + target_dest_map[words[3]]  * (2*sum(reg_dest_map[words[1]]) + 1)
 
 
 

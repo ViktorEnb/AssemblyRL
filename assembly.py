@@ -238,7 +238,7 @@ class AssemblyGame(Game):
         except Exception:
             #Just try again
             time.sleep(1)
-            compile_and_run(c_path, exe_path, num)
+            compile_and_link(c_path, exe_path, num)
             printf = subprocess.run([exe_path], capture_output=True, text=True).stdout
         
         delete_files(self.algo_name, num)
@@ -281,21 +281,33 @@ class AssemblyGame(Game):
 
     def get_legal_moves(self, node):
         previous_moves = torch.ones(self.get_num_actions()) * 1.0 / self.get_num_actions()
+        #For the illegality matrix to multiply correctly, we can only put a 1 in a single action where a register was allocated
+        #You don't get to unlock illegal moves by moving to a register several times
+        allocated_regs = []
         while node.parent != None:
-            previous_moves[node.action] = 1 
+            #Todo: This could probably be made more efficient if you think about it
+            already_allocated = False
+            for reg in self.reg_dest_map.keys():
+                if self.reg_dest_map[reg][node.action] == 1:
+                    if not reg in allocated_regs:
+                        allocated_regs.append(reg)
+                    else:
+                        already_allocated = True
+
+            if not already_allocated:
+                previous_moves[node.action] = 1 
             node = node.parent
-        
         ret = torch.matmul(self.illegal_moves_matrix, previous_moves)
         ret = torch.floor(ret)
         ret = torch.clamp(ret, max=1.0, min=0.0)
 
         #Below is a nice print for debugging information when creating a new target algorithm
 
-        # for i in range(len(previous_moves)):
-        #     if ret[i].item() == 1:
-        #         print(self.assembly.decode(i), "   legal")
-        #     else:
-        #         print(self.assembly.decode(i), "   illegal")
+        for i in range(len(previous_moves)):
+            if ret[i].item() == 1:
+                print(self.assembly.decode(i), "   legal")
+            else:
+                print(self.assembly.decode(i), "   illegal")
         return ret
 
     def write_game(self, actions, filename, meta_info = []):
@@ -382,9 +394,3 @@ class AssemblyGame(Game):
             f.write("#include \"" + self.algo_name + ".h\" \n")
             f.write("void " + self.algo_name + "(" + args + "); \n")
             f.write("#endif")
-
-if __name__ == "__main__":
-    a = Assembly()
-    num = a.encode("mov %rbx -0x4(%rbp)")
-    print(num)
-    print(a.decode(num))

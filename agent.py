@@ -35,7 +35,7 @@ class Agent:
         self.update_policy = False
 
         self.training_time = 0 #Time spent training networks
-        self.max_threads = 2
+        self.max_threads = 3
 
 
     def get_action(self, node):

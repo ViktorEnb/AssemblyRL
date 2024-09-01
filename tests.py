@@ -25,11 +25,19 @@ def test_legal_moves():
     hidden_size = 32
     #Make the results non-random to be able to test performance on different machines
     torch.manual_seed(1)
-    game = Swap2Elements(repr_size, hidden_size)
+    game = MatrixMultiplication(repr_size, hidden_size)
     agent = Agent(game, repr_size, hidden_size, game.get_num_actions(), load=False)
-    agent.mcts.expand(agent.mcts.root)
-    agent.mcts.expand(agent.mcts.root.children[4])
-    print(game.get_legal_moves(agent.mcts.root.children[4].children[8]))
+    current = agent.mcts.root
+    agent.mcts.expand(current)
+    instructions = [
+        "movl 8(%0) %%ecx", 
+        "add %%ecx %%ecx", 
+        "movl (%1) %%ecx"  
+    ]
+    for instruction in instructions:
+        current = current.children[game.assembly.encode(instruction)]  
+        agent.mcts.expand(current)
+    print(game.get_legal_moves(current))
 
 def train_on_swap_2_elements():
     repr_size = 32
@@ -118,4 +126,4 @@ def test_load():
 
 
 if __name__ == "__main__":
-    test_load()
+    test_legal_moves()

@@ -126,10 +126,10 @@ class MatrixMultiplication(AssemblyGame):
                 self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]]
             
             elif words[0] == "imull":
-                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] + reg_dest_map[words[3]]
+                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] * 0.5 + reg_dest_map[words[3]] * 0.5
 
             elif words[0] == "add":
-                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] + reg_dest_map[words[3]]
+                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] * 0.5 + reg_dest_map[words[3]] * 0.5
 
             #Don't allow multiple mov's to the same target
 

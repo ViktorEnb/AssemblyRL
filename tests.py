@@ -14,7 +14,7 @@ def train_on_toy_game():
     repr_size = 7
     num_actions = 2
     agent = Agent(game, repr_size, repr_size, num_actions)
-    agent.train(num_iterations=200)
+    agent.train(num_iterations=40)
     print("\n\n\n")
     agent.print_network_predictions()
     agent.play_game()
@@ -126,4 +126,4 @@ def test_load():
 
 
 if __name__ == "__main__":
-    test_legal_moves()
+    train_on_toy_game()

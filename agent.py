@@ -35,7 +35,7 @@ class Agent:
         self.update_policy = False
 
         self.training_time = 0 #Time spent training networks
-        self.max_threads = 3
+        self.max_threads = 8
 
 
     def get_action(self, node):
@@ -66,7 +66,7 @@ class Agent:
                         executor.submit(
                             lambda: self.mcts.rollout(self.policy_network, self.value_network, node)
                         )
-                        for _ in range(100)
+                        for _ in range(20)
                     ]
                     
                     # As each thread completes, process the results
@@ -85,7 +85,7 @@ class Agent:
 
             if self.save:
                 self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
-            self.save_game(current_best_game, i)
+            # self.save_game(current_best_game, i)
 
     def save_game(self, game, iteration):        
         actions = []

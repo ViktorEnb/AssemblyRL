@@ -303,11 +303,11 @@ class AssemblyGame(Game):
 
         #Below is a nice print for debugging information when creating a new target algorithm
 
-        for i in range(len(previous_moves)):
-            if ret[i].item() == 1:
-                print(self.assembly.decode(i), "   legal")
-            else:
-                print(self.assembly.decode(i), "   illegal")
+        # for i in range(len(previous_moves)):
+        #     if ret[i].item() == 1:
+        #         print(self.assembly.decode(i), "   legal")
+        #     else:
+        #         print(self.assembly.decode(i), "   illegal")
         return ret
 
     def write_game(self, actions, filename, meta_info = []):

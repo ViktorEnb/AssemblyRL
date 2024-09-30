@@ -13,10 +13,13 @@ def compile_and_link(c_path, exe_path, num=0):
     subprocess.run(["gcc", "./tmp/tmp" + str(num) + ".o", "./tmp/main.o", "-o", exe_path], check=True)
 
 def delete_files(name, num):
-    os.remove("./tmp/" + name + str(num) + ".c")
-    os.remove("./tmp/tmp" + str(num) + ".o")
-    os.remove("./tmp/"+ name + str(num) + ".exe")
-
+    try:
+        os.remove("./tmp/" + name + str(num) + ".c")
+        os.remove("./tmp/tmp" + str(num) + ".o")
+        os.remove("./tmp/"+ name + str(num) + ".exe")
+        return True
+    except:
+        return False
 
 
 class Assembly:
@@ -227,8 +230,10 @@ class AssemblyGame(Game):
             while num in self.current_files:
                 num += 1
             self.current_files.append(num)
-
-        self.write_game(actions, filename=os.path.join(".", "tmp", self.algo_name + str(num) + ".c"))
+        decoded_actions = []
+        for action in actions:
+            decoded_actions.append(self.assembly.decode(action))
+        self.write_game(decoded_actions, filename=os.path.join(".", "tmp", self.algo_name + str(num) + ".c"))
         c_path = os.path.join(".", "tmp", self.algo_name + str(num) + ".c")
         exe_path = os.path.join(".", "tmp", self.algo_name + str(num) + ".exe")
         compile_and_link(c_path, exe_path, num)
@@ -241,7 +246,9 @@ class AssemblyGame(Game):
             compile_and_link(c_path, exe_path, num)
             printf = subprocess.run([exe_path], capture_output=True, text=True).stdout
         
-        delete_files(self.algo_name, num)
+        while not delete_files(self.algo_name, num):
+            continue
+        
         self.current_files.remove(num)
 
         passed_cases = self.get_nrof_passed_test_cases(printf)
@@ -322,9 +329,9 @@ class AssemblyGame(Game):
             for line in actions:
                 # print(, "   ", line, "   ", self.assembly.vocab_size)
                 #Check for END
-                if line == self.assembly.vocab_size - 1:
+                if self.assembly.encode(line) == self.assembly.vocab_size - 1:
                     break
-                f.write("\"" + self.assembly.decode(line) + ";\" \n")
+                f.write("\"" + line + ";\" \n")
             if len(actions) > 1:
                 f.write(": \n")
                 f.write(": \"r\"(" + args.replace("int* ", "").replace(",", "),\"r\"(") + ")\n ")
@@ -337,6 +344,7 @@ class AssemblyGame(Game):
                 f.write("//META INFO \n")            
             for line in meta_info:
                 f.write("//" + line + "\n")
+                
     def write_main(self):
         #Create arguments to swap function
         input_args = ["int* input" + str(k) for k in range(self.nrof_inputs)]

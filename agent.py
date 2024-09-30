@@ -35,7 +35,7 @@ class Agent:
         self.update_policy = False
 
         self.training_time = 0 #Time spent training networks
-        self.max_threads = 8
+        self.max_threads = 2
 
 
     def get_action(self, node):
@@ -85,7 +85,7 @@ class Agent:
 
             if self.save:
                 self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
-            # self.save_game(current_best_game, i)
+            self.save_game(current_best_game, i)
 
     def save_game(self, game, iteration):        
         actions = []
@@ -98,7 +98,10 @@ class Agent:
 
         total_time = (datetime.now() - self.game.time_started).seconds
         perc_training = self.training_time * 100.0 / total_time
-        self.game.write_game(actions, filename=filename, meta_info = ["Reward: " + str(self.highest_reward), "Iteration: " + str(iteration), "Time since start: " + str(total_time) + " seconds", "Percentage of time updating networks: " + str(perc_training) + "%"])
+        decoded_actions = []
+        for action in actions:
+            decoded_actions.append(self.game.assembly.decode(action))
+        self.game.write_game(decoded_actions, filename=filename, meta_info = ["Reward: " + str(self.highest_reward), "Iteration: " + str(iteration), "Time since start: " + str(total_time) + " seconds", "Percentage of time updating networks: " + str(perc_training) + "%"])
 
     def update_networks(self, batch):
         # if len(self.replay) < self.batch_size:

@@ -35,7 +35,7 @@ class Agent:
         self.update_policy = False
 
         self.training_time = 0 #Time spent training networks
-        self.max_threads = 2
+        self.max_threads = 1
 
 
     def get_action(self, node):
@@ -66,7 +66,7 @@ class Agent:
                         executor.submit(
                             lambda: self.mcts.rollout(self.policy_network, self.value_network, node)
                         )
-                        for _ in range(20)
+                        for _ in range(500)
                     ]
                     
                     # As each thread completes, process the results
@@ -76,6 +76,7 @@ class Agent:
                         batch.append(game)
                         
                         if reward > self.highest_reward:
+                            print("new best reward: " + str(reward))
                             current_best_game = game
                             self.highest_reward = reward
                 node = self.mcts.select_best_action(node)
@@ -97,7 +98,7 @@ class Agent:
             os.makedirs(os.path.dirname(filename))
 
         total_time = (datetime.now() - self.game.time_started).seconds
-        perc_training = self.training_time * 100.0 / total_time
+        perc_training = 0 if total_time == 0 else self.training_time * 100.0 / total_time 
         decoded_actions = []
         for action in actions:
             decoded_actions.append(self.game.assembly.decode(action))

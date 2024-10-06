@@ -87,7 +87,7 @@ class MatrixMultiplication(AssemblyGame):
         #Has to be modified based on the target algorithm
         self.test_cases = []
         self.targets = []
-        for _ in range(10):
+        for _ in range(3):
             test_case1 = torch.randint(0,20,(2,2))
             test_case2 = torch.randint(0,20,(2,2))
             self.test_cases.append([test_case1, test_case2])

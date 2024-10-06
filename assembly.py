@@ -7,6 +7,7 @@ from datetime import datetime
 import os
 import time 
 import threading
+from peachpysimulator import PeachPyAssemblyExecutor
 
 def compile_and_link(c_path, exe_path, num=0):
     subprocess.run(["gcc", "-O0", "-c", c_path, "-o", "./tmp/tmp" + str(num) + ".o"], check=True)
@@ -135,6 +136,9 @@ class AssemblyGame(Game):
         self.write_header_file()
         subprocess.run(["gcc", "-c", "./tmp/main.c", "-o", "./tmp/main.o"])
         self.current_files = []
+        self.peachpy_simulate = True
+        self.peachpy_simulator = PeachPyAssemblyExecutor(self.nrof_inputs, self.nrof_targets, self.test_cases, self.targets)
+
 
     
     def initialize_state(self):
@@ -222,7 +226,30 @@ class AssemblyGame(Game):
                 actions.append(node.action)
                 node = node.parent
             actions.reverse()
-        #Since this is multi-threaded it's important that we don't write over the same file in 
+
+        decoded_actions = []
+        for action in actions:
+            decoded_actions.append(self.assembly.decode(action))
+        if self.peachpy_simulate:
+            printf = self.peachpy_simulator.simulate(decoded_actions)
+        else:
+            printf = self.compile_and_run_file(decoded_actions)
+        passed_cases = self.get_nrof_passed_test_cases(printf)
+        reward = passed_cases
+
+        #Give extra points for passing all tests making it impossible for a fast 
+        #but wrong algorithm to beat a slow but correct algorithm
+        if passed_cases == 100:
+            reward += 50
+            
+        #Give up to 50 points for fast algorithm if the algorithm is atleast somewhat-correct
+        if passed_cases >= 40:
+            reward += 50.0 * (self.max_lines - len(decoded_actions) + self.min_lines) / self.max_lines
+
+        return reward
+    
+    def compile_and_run_file(self, actions):
+             #Since this is multi-threaded it's important that we don't write over the same file in 
         #Different threads
         self.file_lock = threading.Lock()
         with self.file_lock:
@@ -230,10 +257,7 @@ class AssemblyGame(Game):
             while num in self.current_files:
                 num += 1
             self.current_files.append(num)
-        decoded_actions = []
-        for action in actions:
-            decoded_actions.append(self.assembly.decode(action))
-        self.write_game(decoded_actions, filename=os.path.join(".", "tmp", self.algo_name + str(num) + ".c"))
+        self.write_game(actions, filename=os.path.join(".", "tmp", self.algo_name + str(num) + ".c"))
         c_path = os.path.join(".", "tmp", self.algo_name + str(num) + ".c")
         exe_path = os.path.join(".", "tmp", self.algo_name + str(num) + ".exe")
         compile_and_link(c_path, exe_path, num)
@@ -250,21 +274,8 @@ class AssemblyGame(Game):
             continue
         
         self.current_files.remove(num)
+        return printf
 
-        passed_cases = self.get_nrof_passed_test_cases(printf)
-        reward = passed_cases
-
-        #Give extra points for passing all tests making it impossible for a fast 
-        #but wrong algorithm to beat a slow but correct algorithm
-        if passed_cases == 100:
-            reward += 50
-            
-        #Give up to 50 points for fast algorithm if the algorithm is atleast somewhat-correct
-        if passed_cases >= 40:
-            reward += 50.0 * (self.max_lines - len(actions) + self.min_lines) / self.max_lines
-
-        return reward
-    
     def get_num_actions(self):
         return self.assembly.vocab_size
     

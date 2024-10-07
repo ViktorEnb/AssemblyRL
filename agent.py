@@ -19,10 +19,11 @@ class Agent:
         self.mcts = MCTS(game)
         self.repr_size = repr_size
         self.action_dim = action_dim
-        self.device = ("cuda" if torch.cuda.is_available() else "cpu") #Not used at the moment as my cpu is faster than my gpu¨
-        self.policy_network = Policy(repr_size, hidden_size, action_dim)
+        # self.device = ("cuda" if torch.cuda.is_available() else "cpu") 
+        self.device = "cpu"
+        self.policy_network = Policy(repr_size, hidden_size, action_dim).to(self.device)
         self.policy_optimizer = optim.Adam(self.policy_network.parameters(), lr=0.01)
-        self.value_network = Value(repr_size, hidden_size)
+        self.value_network = Value(repr_size, hidden_size).to(self.device)
         self.value_optimizer = optim.Adam(self.value_network.parameters(), lr=0.01)        
 
         if load:
@@ -30,9 +31,8 @@ class Agent:
 
         self.save = save
         self.replay = [] #List of played games and the rewards achieved
-        self.batch_size = 1
+        self.batch_size = 64
         self.highest_reward = -float('inf')
-        self.update_policy = False
 
         self.training_time = 0 #Time spent training networks
         self.max_threads = 1
@@ -60,34 +60,43 @@ class Agent:
             batch = []
             node = self.mcts.root
             while not self.game.is_terminal(node):
-                with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_threads) as executor:
-                    # Submit tasks to the executor using a lambda function
-                    futures = [
-                        executor.submit(
-                            lambda: self.mcts.rollout(self.policy_network, self.value_network, node)
-                        )
-                        for _ in range(500)
-                    ]
+                # with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_threads) as executor:
+                #     # Submit tasks to the executor using a lambda function
+                #     futures = [
+                #         executor.submit(
+                #             lambda: self.mcts.rollout(self.policy_network, self.value_network, node)
+                #         )
+                #         for _ in range(20)
+                #     ]
                     
                     # As each thread completes, process the results
-                    for future in concurrent.futures.as_completed(futures):
-                        end_node, reward = future.result()
-                        game = {"game": end_node.get_actions(), "reward": reward}
-                        batch.append(game)
-                        
-                        if reward > self.highest_reward:
-                            print("new best reward: " + str(reward))
-                            current_best_game = game
-                            self.highest_reward = reward
+                for j in range(500):
+                    end_node, reward = self.mcts.rollout(self.policy_network, self.value_network, node)
+                    # for future in concurrent.futures.as_completed(futures):
+                    # end_node, reward = future.result()
+                    game = {"game": end_node.get_actions(), "reward": reward}
+                    batch.append(game)
+                    
+                    if reward > self.highest_reward:
+                        print("new best reward: " + str(reward))
+                        current_best_game = game
+                        self.highest_reward = reward
                 node = self.mcts.select_best_action(node)
             reward = current_best_game["reward"]
             print("Got reward ", reward)
-            self.update_networks(batch)
+
+            start_time = time.time()
+            batches = [batch[i:i + self.batch_size] for i in range(0, len(batch), self.batch_size)]
+            batch_counter = 0
+            for m_batch in batches:
+                print("Training on batch nr: ", str(batch_counter),"/", str(len(batches)))
+                self.update_networks(m_batch)
+                batch_counter += 1
+            print("Training took " + str(time.time() - start_time))
 
             if self.save:
                 self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
-            self.save_game(current_best_game, i)
-
+            self.save_game(current_best_game, i)            
     def save_game(self, game, iteration):        
         actions = []
         for d in game["game"]:
@@ -124,30 +133,26 @@ class Agent:
                 action = move["action"]
                 predicted_actions = self.policy_network(current_state)
                 current_state = self.game.apply_action(current_state, action)
-                policy_loss += policy_loss_fn(predicted_actions, torch.tensor(action))   
+                policy_loss += policy_loss_fn(predicted_actions, torch.tensor(action).to(self.device))   
         policy_loss.backward()
+        self.policy_optimizer.step()
 
-        if self.update_policy:
-            self.policy_optimizer.step()
-
-        self.value_optimizer.zero_grad()
-        value_loss = 0
-        value_loss_fn = torch.nn.MSELoss()
-        #TRAINING VALUE NETWORK
-        for replay in batch:
-            current_state = self.game.initialize_state()
-            game = replay["game"]
-            reward = replay["reward"]
-            for move in game:
-                predicted_reward = self.value_network(current_state)                
-                value_loss += value_loss_fn(predicted_reward, torch.tensor([reward], dtype=torch.float32))
-                action = move["action"]
-                current_state = self.game.apply_action(current_state, action)
-        value_loss.backward()
-        self.value_optimizer.step()
-        if self.update_policy:
-            self.game.repr_optimizer.step()
-
+        # self.value_optimizer.zero_grad()
+        # value_loss = 0
+        # value_loss_fn = torch.nn.MSELoss()
+        # #TRAINING VALUE NETWORK
+        # for replay in batch:
+        #     current_state = self.game.initialize_state()
+        #     game = replay["game"]
+        #     reward = replay["reward"]
+        #     for move in game:
+        #         predicted_reward = self.value_network(current_state)                
+        #         value_loss += value_loss_fn(predicted_reward, torch.tensor([reward], dtype=torch.float32).to(self.device))
+        #         action = move["action"]
+        #         current_state = self.game.apply_action(current_state, action)
+        # value_loss.backward()
+        # self.value_optimizer.step()
+        self.game.repr_optimizer.step()
         self.training_time += time.time() - start_training
 
     def print_network_predictions(self):

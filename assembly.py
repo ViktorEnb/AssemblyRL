@@ -121,7 +121,10 @@ class AssemblyGame(Game):
         self.assembly = Assembly()
         self.init_vocab()   
         self.repr_size = repr_size
-        self.repr_network = Representation(self.repr_size, self.assembly.vocab_size, hidden_size)
+        # self.device = ("cuda" if torch.cuda.is_available() else "cpu")   
+        self.device = "cpu"
+     
+        self.repr_network = Representation(self.repr_size, self.assembly.vocab_size, hidden_size).to(self.device)
         self.repr_optimizer = optim.Adam(self.repr_network.parameters(), lr=0.001)
         self.time_started = datetime.now() 
         self.generate_test_cases()
@@ -142,7 +145,7 @@ class AssemblyGame(Game):
 
     
     def initialize_state(self):
-        return torch.zeros(self.repr_size)
+        return torch.zeros(self.repr_size).to(self.device)
 
     def generate_test_cases(self):
         #Depends on the target algorithm
@@ -293,7 +296,7 @@ class AssemblyGame(Game):
         return counter >= self.max_lines    
 
     def apply_action(self, state, action : int):
-        action_onehot = torch.zeros(self.get_num_actions())
+        action_onehot = torch.zeros(self.get_num_actions()).to(self.device)
         action_onehot[action] = 1
         return self.repr_network(torch.cat((state, action_onehot)))
 

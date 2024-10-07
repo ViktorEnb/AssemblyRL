@@ -9,7 +9,7 @@ class MCTS:
     def __init__(self, game):
         self.game = game
         self.root = Node(state=self.game.initialize_state(), parent=None)
-
+        self.get_reward_counter = 0
     def rollout(self, policy_network, value_network, node, _lambda = 0):
         # 1. Selection with UCB
         while (node.is_expanded or node.is_expanding) and not self.game.is_terminal(node):
@@ -34,7 +34,7 @@ class MCTS:
             while node.is_expanding:
                 continue
             logits = policy_network(node.state)
-            action_probs = nn.functional.softmax(logits, dim=-1)
+            action_probs = nn.functional.softmax(logits, dim=-1).to("cpu")
             #Remove illegal moves
             action_probs = torch.mul(action_probs, self.game.get_legal_moves(node)).detach().numpy()
             action_probs = 1.0 / sum(action_probs) * action_probs
@@ -42,8 +42,10 @@ class MCTS:
             for child in node.children:
                 if child.action == action:
                     node = child
-        
+        self.get_reward_counter += 1
         reward += (1 - _lambda) * self.game.get_reward(node)
+        if self.get_reward_counter % 100 == 0:
+            print(self.get_reward_counter)
         # 4. Backpropagation
         self.backpropagate(node, reward)
 

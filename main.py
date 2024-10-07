@@ -11,4 +11,4 @@ if __name__ == "__main__":
     hidden_size = 64
     game = MatrixMultiplication(repr_size, hidden_size)
     agent = Agent(game, repr_size, hidden_size, game.get_num_actions(), load=False, save=True)
-    agent.train(num_iterations=1)  
+    agent.train(num_iterations=100)  

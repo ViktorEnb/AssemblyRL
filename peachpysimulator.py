@@ -48,7 +48,7 @@ class PeachPyAssemblyExecutor:
 
     def convert_address(self, addr, GPR_dict):
         if "%%" in addr:  # Converts registers on the form %%eax
-            return eval(addr.replace("%", "").lower())  # Convert to PeachPy register, e.g., eax
+            return eval(addr.replace("%", "").lower())
         elif "(" in addr:  # Convert stuff on the form 4(%0) etc
             offset, reg_placeholder = addr.split("(")
             reg_placeholder = reg_placeholder.strip(")").replace("%","")
@@ -86,7 +86,6 @@ class PeachPyAssemblyExecutor:
 
             RETURN()
         
-
         target_function = asm_function.finalize(abi.detect()).encode().load()
         printf=""
         for i in range(len(self.case_pointers)):

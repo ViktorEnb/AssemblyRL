@@ -125,7 +125,7 @@ class AssemblyGame(Game):
         self.device = "cpu"
      
         self.repr_network = Representation(self.repr_size, self.assembly.vocab_size, hidden_size).to(self.device)
-        self.repr_optimizer = optim.Adam(self.repr_network.parameters(), lr=0.001)
+        self.repr_optimizer = optim.Adam(self.repr_network.parameters(), lr=0.01)
         self.time_started = datetime.now() 
         self.generate_test_cases()
         if not self.validate_test_cases():
@@ -297,7 +297,7 @@ class AssemblyGame(Game):
 
     def apply_action(self, state, action : int):
         action_onehot = torch.zeros(self.get_num_actions()).to(self.device)
-        action_onehot[action] = 1
+        action_onehot[action] = 1000
         return self.repr_network(torch.cat((state, action_onehot)))
 
     def get_legal_moves(self, node):

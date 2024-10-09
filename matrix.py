@@ -3,7 +3,7 @@ import torch
 
 
 #Very basic algorithm used for testing
-#My computer can find the optimal solution in about 10 minutes (30 seconds after various optimizations :))
+#My computer can find the optimal solution in about 10 minutes (30 seconds after various optimizations, UPDATE: like 2 seconds now  :))
 class Swap2Elements(AssemblyGame):
     def generate_test_cases(self):
         #Has to be modified based on the target algorithm
@@ -81,6 +81,81 @@ class Swap2Elements(AssemblyGame):
         self.set_illegal_moves()
         self.max_lines = 7
         self.min_lines = 5
+
+#Even simpler algorithm for testing the network training
+class SimplestAssemblyGame(AssemblyGame):
+    def generate_test_cases(self):
+        #Has to be modified based on the target algorithm
+        self.test_cases = []
+        self.targets = []
+        for _ in range(2):
+            test_case = torch.randint(0,20,(1,))
+            self.test_cases.append([test_case])
+            self.targets.append([test_case])
+
+    def set_illegal_moves(self):
+        dim = self.get_num_actions()
+        self.illegal_moves_matrix = torch.ones((dim,dim))
+        #Maps registers to instructions which have register as dest
+        reg_dest_map = {}
+        #Maps targets to instructions which have targets as dest
+        target_dest_map = {}
+        for action in range(dim):
+            words = self.assembly.decode(action).split(" ")
+            if words[0] == "movl" and words[3] in self.assembly.registers:
+                if words[3] in reg_dest_map:
+                    reg_dest_map[words[3]][action] = 1
+                else:
+                    reg_dest_map[words[3]] = torch.zeros(dim)
+                    reg_dest_map[words[3]][action] = 1
+            if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
+                if words[3] in target_dest_map:
+                    target_dest_map[words[3]][action] = -1
+                else:
+                    target_dest_map[words[3]] = torch.zeros(dim)
+                    target_dest_map[words[3]][action] = -1
+
+        #Reg_dest_map has to be known in get_legal_moves
+        self.reg_dest_map = reg_dest_map
+        for action in range(dim):
+            words = self.assembly.decode(action).split(" ")
+            #Don't allow to mov un handled registers
+            if words[0] == "movl" and words[1] in self.assembly.registers:
+                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]]
+
+            #Don't allow multiple mov's to the same target
+
+            #It's only allowed to move to a target
+            #If the src reg has been filled AND we haven't allocated to this space before
+            #If you think about it this works
+            if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
+                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]]*2 + target_dest_map[words[3]]  * (2*sum(reg_dest_map[words[1]]) + 1)
+
+
+
+    def set_algo_name(self):
+        self.algo_name = "supersimple"
+
+    def init_vocab(self):
+        #We need 2 registers
+        self.assembly.registers = ["%%eax"]
+
+        #Memory addresers for 2 arrays of length 2.
+        self.assembly.target_mem_locs = ["(%1)"]
+        self.assembly.input_mem_locs = ["(%0)"]
+
+        #All assembly instructions required for swapping 2 elements
+        self.assembly.vocab = [
+            "movl IMEM, REG",
+            "movl REG, TMEM",
+            "END"
+        ]
+
+        self.assembly.calculate_vocab_size()
+        self.set_illegal_moves()
+        self.max_lines = 6
+        self.min_lines = 3
+
 
 class MatrixMultiplication(AssemblyGame):
     def generate_test_cases(self):

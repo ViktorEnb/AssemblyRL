@@ -31,12 +31,12 @@ class Agent:
 
         self.save = save
         self.replay = [] #List of played games and the rewards achieved
-        self.batch_size = 64
+        self.batch_size = 32
         self.highest_reward = -float('inf')
 
         self.training_time = 0 #Time spent training networks
         self.max_threads = 1
-
+        self.action_dict = {}
 
     def get_action(self, node):
         # Perform MCTS rollouts
@@ -70,7 +70,7 @@ class Agent:
                 #     ]
                     
                     # As each thread completes, process the results
-                for j in range(500):
+                for j in range(50):
                     end_node, reward = self.mcts.rollout(self.policy_network, self.value_network, node)
                     # for future in concurrent.futures.as_completed(futures):
                     # end_node, reward = future.result()
@@ -85,8 +85,13 @@ class Agent:
             reward = current_best_game["reward"]
             print("Got reward ", reward)
 
+            #Only use the best games for training (this only works if we don't use a value network)
+            batch_sorted = sorted(batch, key=lambda x: x['reward'], reverse=True)
+            num_games_to_keep = int(len(batch_sorted) * 0.1)
+            top_batch = batch_sorted[:num_games_to_keep]
+            print("Length of training: " + str((len(top_batch))))
             start_time = time.time()
-            batches = [batch[i:i + self.batch_size] for i in range(0, len(batch), self.batch_size)]
+            batches = [top_batch[i:i + self.batch_size] for i in range(0, len(top_batch), self.batch_size)]
             batch_counter = 0
             for m_batch in batches:
                 print("Training on batch nr: ", str(batch_counter),"/", str(len(batches)))
@@ -96,7 +101,7 @@ class Agent:
 
             if self.save:
                 self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
-            self.save_game(current_best_game, i)            
+            # self.save_game(current_best_game, i)      
     def save_game(self, game, iteration):        
         actions = []
         for d in game["game"]:
@@ -133,6 +138,10 @@ class Agent:
                 action = move["action"]
                 predicted_actions = self.policy_network(current_state)
                 current_state = self.game.apply_action(current_state, action)
+                if action in self.action_dict:
+                    self.action_dict[action] += 1
+                else:
+                    self.action_dict[action] = 1
                 policy_loss += policy_loss_fn(predicted_actions, torch.tensor(action).to(self.device))   
         policy_loss.backward()
         self.policy_optimizer.step()
@@ -201,15 +210,17 @@ class Agent:
             if node.state == None:
                 node.state = self.game.apply_action(node.parent.state, node.action)
             logits = self.policy_network(node.state)
+            print("state")
+            print(node.state)
             action_probs = nn.functional.softmax(logits, dim=-1)
             #Remove illegal moves
             action_probs = torch.mul(action_probs, self.game.get_legal_moves(node)).detach().numpy()
             action_probs = 1.0 / np.linalg.norm(action_probs) * action_probs
-
+            print(action_probs)
             index = np.argmax(action_probs)
             selected_action = self.game.get_actions()[index]
             # selected_action = np.random.choice(self.game.get_actions(), p=action_probs)
-            print("Selecting action: ", selected_action)
+            print("Selecting action: ", selected_action, "which is ", self.game.assembly.decode(selected_action.item()))
             node = Node(self.game.apply_action(node.state, selected_action), node, action=selected_action)
             nodes.append(node)
         print("Got reward: ", self.game.get_reward(node))

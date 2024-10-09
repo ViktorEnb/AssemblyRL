@@ -6,7 +6,7 @@ from assembly import AssemblyGame
 from game import Game, ToyGameWithReprNetwork
 import subprocess
 from agent import Agent
-from matrix import MatrixMultiplication, Swap2Elements
+from matrix import MatrixMultiplication, Swap2Elements, SimplestAssemblyGame
 from peachpy import *
 from peachpy.x86_64 import *
 
@@ -18,14 +18,23 @@ import time
 def train_on_toy_game():
     #Trains an agent on an extremely simple game
     game = ToyGameWithReprNetwork()
-    repr_size = 7
+    repr_size = 9
     num_actions = 2
     agent = Agent(game, repr_size, repr_size, num_actions)
-    agent.train(num_iterations=40)
+    agent.train(num_iterations=400)
     print("\n\n\n")
-    agent.print_network_predictions()
+    # agent.print_network_predictions()
     agent.play_game()
 
+
+def train_on_simple_assembly_game():
+    #Trains an agent on an extremely simple game
+    repr_size = 12
+    hidden_size = 12
+    game = SimplestAssemblyGame(repr_size, hidden_size)
+    agent = Agent(game, repr_size, hidden_size, game.get_num_actions(), load=False)
+    agent.train(num_iterations=300)  
+    agent.play_game()
 
 def test_legal_moves():
     repr_size = 32
@@ -47,13 +56,11 @@ def test_legal_moves():
     print(game.get_legal_moves(current))
 
 def train_on_swap_2_elements():
-    repr_size = 32
-    hidden_size = 32
-    #Make the results non-random to be able to test performance on different machines
-    torch.manual_seed(1)
+    repr_size = 12
+    hidden_size = 12
     game = Swap2Elements(repr_size, hidden_size)
     agent = Agent(game, repr_size, hidden_size, game.get_num_actions(), load=False)
-    agent.train(num_iterations=10)  
+    agent.train(num_iterations=100)  
     agent.play_game()
 
 
@@ -131,41 +138,6 @@ def test_load():
     loaded_agent = Agent(new_game, repr_size, hidden_size, new_game.get_num_actions(), load=True, save=False)
     loaded_agent.play_game()  
 
-
-
-
-def simple_peachpy():
-    args = []
-    arg_dict = {}  # Dictionary to store dynamically created arguments
-
-    # Dynamically create arguments and store them in a dictionary
-    for i in range(2):
-        arg_name = f"i{i}"
-        arg_dict[arg_name] = Argument(ptr(const_int32_t), name=arg_name)
-        args.append(arg_dict[arg_name])
-
-    with Function("add", tuple(args)) as function:
-        reg_a, reg_b = GeneralPurposeRegister64(), GeneralPurposeRegister64()
-
-        # Access the arguments from the dictionary
-        LOAD.ARGUMENT(reg_a, arg_dict["i0"])
-        LOAD.ARGUMENT(reg_b, arg_dict["i1"])
-
-        # Perform the MOV operations
-        MOV(eax, [reg_a])         # Load value pointed by 'i0' into eax
-        MOV([reg_b + 4], eax)     # Store eax value into 'i1 + 4'
-        
-        MOV(eax, [reg_a + 4])     # Load value at 'i0 + 4' into eax
-        MOV([reg_b], eax)         # Store eax value into 'i1'
-
-        RETURN()
-    add = function.finalize(abi.detect()).encode().load()
-    a1 = np.array([3,4], dtype=np.int32)
-    b1 = np.zeros((2), dtype=np.int32)
-    A_ptr = a1.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
-    B_ptr = b1.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
-    add(A_ptr,B_ptr)
-    print(b1)
 
 
 def peachpy_matmul():
@@ -281,4 +253,4 @@ def peachpy_matmul():
     print(C)
 
 if __name__ == "__main__":
-    simple_peachpy()    
+    train_on_swap_2_elements()

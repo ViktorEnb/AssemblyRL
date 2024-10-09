@@ -36,13 +36,16 @@ class ToyGameWithReprNetwork(Game):
             3: [],
             4: [],
             5: [],
-            6: []
+            6: [7, 8],
+            7: [],
+            8: []
         }
         self.rewards = {
             3: 10,
             4: -3,
             5: 25,
-            6: 12
+            7: 50,
+            8: 12
         }
         self.state_size = len(self.tree.keys())
         self.has_repr_network = True

@@ -252,7 +252,7 @@ class AssemblyGame(Game):
         return reward
     
     def compile_and_run_file(self, actions):
-             #Since this is multi-threaded it's important that we don't write over the same file in 
+        #Since this is multi-threaded it's important that we don't write over the same file in 
         #Different threads
         self.file_lock = threading.Lock()
         with self.file_lock:
@@ -319,9 +319,10 @@ class AssemblyGame(Game):
                 previous_moves[node.action] = 1 
             node = node.parent
         ret = torch.matmul(self.illegal_moves_matrix, previous_moves)
+        ret[torch.abs(ret - 1.0) < 1e-3] = 1.0 #To fix rounding error bug
         ret = torch.floor(ret)
         ret = torch.clamp(ret, max=1.0, min=0.0)
-
+        
         #Below is a nice print for debugging information when creating a new target algorithm
 
         # for i in range(len(previous_moves)):

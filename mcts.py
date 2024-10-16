@@ -38,9 +38,7 @@ class MCTS:
             action_probs = torch.mul(action_probs, self.game.get_legal_moves(node)).detach().numpy()
             action_probs = 1.0 / sum(action_probs) * action_probs
             action = np.random.choice(self.game.get_actions(), p=action_probs)
-            for child in node.children:
-                if child.action == action:
-                    node = child
+            node = node.children[action]
         reward += (1 - _lambda) * self.game.get_reward(node)
 
         # 4. Backpropagation

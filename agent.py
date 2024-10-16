@@ -70,7 +70,7 @@ class Agent:
                 #     ]
                     
                     # As each thread completes, process the results
-                for j in range(50):
+                for j in range(10):
                     end_node, reward = self.mcts.rollout(self.policy_network, self.value_network, node)
                     # for future in concurrent.futures.as_completed(futures):
                     # end_node, reward = future.result()
@@ -101,7 +101,7 @@ class Agent:
 
             if self.save:
                 self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
-            # self.save_game(current_best_game, i)      
+            self.save_game(current_best_game, i)      
     def save_game(self, game, iteration):        
         actions = []
         for d in game["game"]:

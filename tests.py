@@ -6,7 +6,7 @@ from assembly import AssemblyGame
 from game import Game, ToyGameWithReprNetwork
 import subprocess
 from agent import Agent
-from matrix import MatrixMultiplication, Swap2Elements, SimplestAssemblyGame, DotProduct2x1
+from matrix import MatrixMultiplication, Swap2Elements, SimplestAssemblyGame, DotProduct2x1, DotProduct1x1
 from peachpy import *
 from peachpy.x86_64 import *
 from node import Node
@@ -133,6 +133,22 @@ def test_dot_product():
                 "imull %%ebx %%edx",
                 "add %%ecx %%edx",
                 "movl %%edx (%2)",
+                "END"
+                ]
+    node = Node(state=game.initialize_state(), parent=None)
+    for instruction in instructions:
+        encoded_action = game.assembly.encode(instruction)
+        node = Node(state=game.apply_action(node.state, encoded_action), parent=node, action=encoded_action)
+    print(game.get_reward(node))
+
+def test_multiplication():
+    game = DotProduct1x1(32, 32)
+    instructions = [
+                #calculating target[0]
+                "movl (%0) %%eax",   
+                "movl (%1) %%ecx",    
+                "imull %%eax %%ecx",
+                "movl %%ecx (%2)",
                 "END"
                 ]
     node = Node(state=game.initialize_state(), parent=None)
@@ -276,4 +292,4 @@ def peachpy_matmul():
     print(C)
 
 if __name__ == "__main__":
-    train_on_swap_2_elements()
+    test_multiplication()

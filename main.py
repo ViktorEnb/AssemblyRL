@@ -1,5 +1,5 @@
 from agent import Agent
-from matrix import Swap2Elements, MatrixMultiplication, DotProduct2x1
+from matrix import Swap2Elements, MatrixMultiplication, DotProduct2x1, DotProduct1x1
 import psutil
 import os
 

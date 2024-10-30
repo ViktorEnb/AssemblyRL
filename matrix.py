@@ -337,3 +337,95 @@ class DotProduct2x1(AssemblyGame):
         
         self.max_lines = 15
         self.min_lines = 9
+
+
+
+class DotProduct1x1(AssemblyGame):
+    def generate_test_cases(self):
+        #Has to be modified based on the target algorithm
+        self.test_cases = []
+        self.targets = []
+        for _ in range(5):
+            test_case1 = torch.randint(0,20,(1,))
+            test_case2 = torch.randint(0,20,(1,))
+            self.test_cases.append([test_case1, test_case2])
+            target = torch.dot(test_case1, test_case2)
+            self.targets.append([target])
+    
+    def set_illegal_moves(self):
+        dim = self.get_num_actions()
+        self.illegal_moves_matrix = torch.ones((dim,dim))
+        #Maps registers to instructions which have register as dest
+        reg_dest_map = {}
+        #Maps targets to instructions which have targets as dest
+        target_dest_map = {}
+        for action in range(dim):
+            words = self.assembly.decode(action).split(" ")
+            if words[0] == "movl" and words[3] in self.assembly.registers:
+                if words[3] in reg_dest_map:
+                    reg_dest_map[words[3]][action] = 1
+                else:
+                    reg_dest_map[words[3]] = torch.zeros(dim)
+                    reg_dest_map[words[3]][action] = 1
+            if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
+                if words[3] in target_dest_map:
+                    target_dest_map[words[3]][action] = -1
+                else:
+                    target_dest_map[words[3]] = torch.zeros(dim)
+                    target_dest_map[words[3]][action] = -1
+                    
+        #Reg_dest_map has to be known in get_legal_moves
+        self.reg_dest_map = reg_dest_map
+        for action in range(dim):
+            words = self.assembly.decode(action).split(" ")
+            #Moving with the same src and dest is never allowed
+            if words[0] == "movl" and words[1] == words[3]:
+                self.illegal_moves_matrix[action, :] = 0
+            
+            #Don't allow to mov un handled registers
+            elif words[0] == "movl" and words[1] in self.assembly.registers:
+                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]]
+            
+            elif words[0] == "imull":
+                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] * 0.5 + reg_dest_map[words[3]] * 0.5
+
+            elif words[0] == "add":
+                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] * 0.5 + reg_dest_map[words[3]] * 0.5
+
+            #Don't allow multiple mov's to the same target
+
+            #It's only allowed to move to a target
+            #If the src reg has been filled AND we haven't allocated to this space before
+            #If you think about it this works
+            if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
+                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]]*2 + target_dest_map[words[3]]  * (2*sum(reg_dest_map[words[1]]) + 1)
+
+
+
+    
+    def set_algo_name(self):
+        self.algo_name = "multiplication"
+    
+    def init_vocab(self):
+        #We need 4 registers
+        self.assembly.registers = ["%%eax", "%%ebx"]
+
+        #Memory addresers for input0, input1 and target. All being 2x2 matricies.
+        self.assembly.target_mem_locs = ["(%2)"]
+        
+        self.assembly.input_mem_locs = ["(%0)", "(%1)"]
+            
+        #All assembly instructions required for matrix multiplication
+        self.assembly.vocab = ["movl REG, REG",
+            "movl IMEM, REG",
+            "movl REG, TMEM",
+            "imull REG, REG",
+            "add REG, REG",
+            "END"
+        ]
+        self.assembly.calculate_vocab_size()
+
+        self.set_illegal_moves()
+        
+        self.max_lines = 9
+        self.min_lines = 5

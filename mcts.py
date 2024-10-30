@@ -11,10 +11,8 @@ class MCTS:
         self.root = Node(state=self.game.initialize_state(), parent=None)
     def rollout(self, policy_network, value_network, node, _lambda = 0):
         # 1. Selection with UCB
-        while (node.is_expanded or node.is_expanding) and not self.game.is_terminal(node):
+        while node.is_expanded and not self.game.is_terminal(node):
             #Wait for node to expand in another thread
-            while node.is_expanding:
-                continue
             node = self.select(node)
 
         # 2. Use value network for more accurate reward estimate  
@@ -23,15 +21,12 @@ class MCTS:
             self.expand(node)     
             reward += _lambda * value_network(node.state)
             if _lambda == 1:
-                self.expand(node)
                 self.backpropagate(node, reward)
                 return 
         
         # 3. Simulating a reward
         while not self.game.is_terminal(node):
             self.expand(node)
-            if node.is_expanding:
-                continue
             logits = policy_network(node.state)
             action_probs = nn.functional.softmax(logits, dim=-1).to("cpu")
             #Remove illegal moves
@@ -97,14 +92,10 @@ class MCTS:
     
 
     def expand(self, node):
-        if node.is_expanded or node.is_expanding:
-            return
-        node.is_expanding = True
         #Only give a node a state if it's expanded. This is a way to optimize
         #in case of many children per node
         if node.state == None:
             node.state = self.game.apply_action(node.parent.state, node.action)
-        node.is_expanding = False
         node.is_expanded = True
 
 

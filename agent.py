@@ -35,7 +35,6 @@ class Agent:
         self.highest_reward = -float('inf')
 
         self.training_time = 0 #Time spent training networks
-        self.max_threads = 1
         self.action_dict = {}
 
     def get_action(self, node):
@@ -50,7 +49,6 @@ class Agent:
 
     def train(self, num_iterations):
         current_best_game = None
-        thread_counter = 0
         for i in range(num_iterations):
             #It doesn't make sense to update the policy with a random value network
             if i >= 0:
@@ -70,10 +68,8 @@ class Agent:
                 #     ]
                     
                     # As each thread completes, process the results
-                for j in range(1000):
+                for j in range(50):
                     end_node, reward = self.mcts.rollout(self.policy_network, self.value_network, node)
-                    # for future in concurrent.futures.as_completed(futures):
-                    # end_node, reward = future.result()
                     game = {"game": end_node.get_actions(), "reward": reward}
                     batch.append(game)
                     

@@ -22,7 +22,7 @@ class Agent:
         # self.device = ("cuda" if torch.cuda.is_available() else "cpu") 
         self.device = "cpu"
         self.policy_network = Policy(repr_size, hidden_size, action_dim).to(self.device)
-        self.policy_optimizer = optim.Adam(self.policy_network.parameters(), lr=0.01)
+        self.policy_optimizer = optim.Adam(self.policy_network.parameters(), lr=0.001)
         self.value_network = Value(repr_size, hidden_size).to(self.device)
         self.value_optimizer = optim.Adam(self.value_network.parameters(), lr=0.01)        
 
@@ -31,7 +31,7 @@ class Agent:
 
         self.save = save
         self.replay = [] #List of played games and the rewards achieved
-        self.batch_size = 32
+        self.batch_size = 1
         self.highest_reward = -float('inf')
 
         self.training_time = 0 #Time spent training networks
@@ -70,7 +70,7 @@ class Agent:
                 #     ]
                     
                     # As each thread completes, process the results
-                for j in range(10):
+                for j in range(4):
                     end_node, reward = self.mcts.rollout(self.policy_network, self.value_network, node)
                     # for future in concurrent.futures.as_completed(futures):
                     # end_node, reward = future.result()
@@ -87,7 +87,7 @@ class Agent:
 
             #Only use the best games for training (this only works if we don't use a value network)
             batch_sorted = sorted(batch, key=lambda x: x['reward'], reverse=True)
-            num_games_to_keep = int(len(batch_sorted) * 0.1)
+            num_games_to_keep = int(len(batch_sorted) * 1)
             top_batch = batch_sorted[:num_games_to_keep]
             print("Length of training: " + str((len(top_batch))))
             start_time = time.time()
@@ -107,7 +107,7 @@ class Agent:
         for d in game["game"]:
             actions.append(d["action"])
 
-        filename = os.path.join(".", "best_algos", self.game.time_started.strftime("%m-%d-%H-%M") + self.game.algo_name, str(self.highest_reward) + ".c")        
+        filename = os.path.join(".", "best_algos", self.game.time_started.strftime("%m-%d-%H-%M") + self.game.algo_name, "n=" + str(iteration) + "r=" + str(self.highest_reward) + ".c")        
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
 
@@ -164,32 +164,6 @@ class Agent:
         self.game.repr_optimizer.step()
         self.training_time += time.time() - start_training
 
-    def print_network_predictions(self):
-        #This only works at the moment if all moves in all states are valid
-        unique_states = self.game.get_unique_states()
-        for game in self.game.random_games:
-            repr = self.game.initialize_state()
-            logits = self.policy_network(repr)
-            # logits = torch.mul(logits, self.game.get_legal_moves(node))
-            action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
-            predicted_value = self.value_network(repr)
-            print("State: ", 0, " Action probs: ", action_probs)
-            print("State: ", 0, " repr: ", repr)
-            print("State: ", 0, " predicted value: ", predicted_value[0].item())
-            for (state, action) in game:
-                action_onehot = torch.zeros(self.action_dim)
-                action_onehot[action] = 1
-                repr = self.game.repr_network(torch.concat((repr, action_onehot)))
-                logits = self.policy_network(repr)
-                # logits = torch.mul(logits, self.game.get_legal_moves(node))
-
-                action_probs = nn.functional.softmax(logits, dim=-1).detach().numpy()
-                predicted_value = self.value_network(repr)
-
-                print("State: ", state, " Action probs: ", action_probs)
-                print("State: ", state, " repr: ", repr)
-                print("State: ", state, " predicted value: ", predicted_value[0].item())
-
     #Used for testing training of value and policy network. Is called after gathering of experiences
     def train_on_entire_game(self):
         #Print before training values
@@ -220,7 +194,7 @@ class Agent:
             index = np.argmax(action_probs)
             selected_action = self.game.get_actions()[index]
             # selected_action = np.random.choice(self.game.get_actions(), p=action_probs)
-            print("Selecting action: ", selected_action, "which is ", self.game.assembly.decode(selected_action.item()))
+            print("Selecting action: ", selected_action)#, "which is ", self.game.assembly.decode(selected_action.item()))
             node = Node(self.game.apply_action(node.state, selected_action), node, action=selected_action)
             nodes.append(node)
         print("Got reward: ", self.game.get_reward(node))

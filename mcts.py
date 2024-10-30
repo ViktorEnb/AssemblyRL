@@ -37,7 +37,7 @@ class MCTS:
             #Remove illegal moves
             action_probs = torch.mul(action_probs, self.game.get_legal_moves(node)).detach().numpy()
             action_probs = 1.0 / sum(action_probs) * action_probs
-            action = np.random.choice(self.game.get_actions(), p=action_probs)
+            action = np.random.choice(self.game.get_actions())
             child_node = Node(state=None, parent=node, action = action)
             node.add_child(action, child_node)
             node = child_node
@@ -63,7 +63,7 @@ class MCTS:
                 total_reward = node.children[action].total_reward
                 visit_count = node.children[action].visit_count
 
-            uct_value = (total_reward / (visit_count + 1e-6)) + C * np.sqrt(np.log(node.visit_count + 1) / (visit_count + 1e-6))
+            uct_value = (total_reward / (visit_count + 1e-6)) + C * np.sqrt(np.log(node.visit_count + 1) / (visit_count + 1))
             if uct_value > best_value:
                 best_value = uct_value
                 child = node.children.get(action) or Node(state=None, parent=node, action=action.item())

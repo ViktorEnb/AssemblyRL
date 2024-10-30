@@ -19,13 +19,15 @@ import time
 def train_on_toy_game():
     #Trains an agent on an extremely simple game
     game = ToyGameWithReprNetwork()
-    repr_size = 9
-    num_actions = 2
+    repr_size = len(game.tree.keys())
+    num_actions = game.width
     agent = Agent(game, repr_size, repr_size, num_actions)
-    agent.train(num_iterations=400)
+    agent.train(num_iterations=200)
     print("\n\n\n")
     # agent.print_network_predictions()
     agent.play_game()
+    print("max reward is " + str(game.max_reward))
+    print("tree size is " + str(game.nrof_leaves))
 
 
 def train_on_simple_assembly_game():
@@ -57,11 +59,11 @@ def test_legal_moves():
     print(game.get_legal_moves(current))
 
 def train_on_swap_2_elements():
-    repr_size = 12
-    hidden_size = 12
+    repr_size = 32
+    hidden_size = 32
     game = Swap2Elements(repr_size, hidden_size)
     agent = Agent(game, repr_size, hidden_size, game.get_num_actions(), load=False)
-    agent.train(num_iterations=100)  
+    agent.train(num_iterations=5)  
     agent.play_game()
 
 

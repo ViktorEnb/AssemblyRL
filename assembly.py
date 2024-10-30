@@ -125,7 +125,7 @@ class AssemblyGame(Game):
         self.device = "cpu"
      
         self.repr_network = Representation(self.repr_size, self.assembly.vocab_size, hidden_size).to(self.device)
-        self.repr_optimizer = optim.Adam(self.repr_network.parameters(), lr=0.01)
+        self.repr_optimizer = optim.Adam(self.repr_network.parameters(), lr=0.0001, weight_decay=1e-5)
         self.time_started = datetime.now() 
         self.generate_test_cases()
         if not self.validate_test_cases():

@@ -30,7 +30,7 @@ class MCTS:
         # 3. Simulating a reward
         while not self.game.is_terminal(node):
             self.expand(node)
-            while node.is_expanding:
+            if node.is_expanding:
                 continue
             logits = policy_network(node.state)
             action_probs = nn.functional.softmax(logits, dim=-1).to("cpu")
@@ -38,44 +38,60 @@ class MCTS:
             action_probs = torch.mul(action_probs, self.game.get_legal_moves(node)).detach().numpy()
             action_probs = 1.0 / sum(action_probs) * action_probs
             action = np.random.choice(self.game.get_actions())
-            child_node = Node(state=None, parent=node, action = action)
-            node.add_child(action, child_node)
-            node = child_node
+            if action not in node.children:
+                child_node = Node(state=None, parent=node, action = action)
+                node.add_child(action, child_node)
+            node = node.children[action]
         reward += (1 - _lambda) * self.game.get_reward(node)
 
         # 4. Backpropagation
-        self.backpropagate(node, reward)
+        self.backpropagate(node, reward.item())
 
         return node, reward.item()
 
     def select(self, node):
-        C = 1.41  # Exploration parameter
+        C = 3  #exploration parameter
         best_value = -float('inf')
         best_nodes = []
         uct_values = []
         for action in self.game.get_actions():
             if self.game.get_legal_moves(node)[action] == 0:
-                #Never select illegal move
+                #skip illegal moves
                 continue
-            total_reward = 0
-            visit_count = 0
-            if action in node.children.keys():
-                total_reward = node.children[action].total_reward
-                visit_count = node.children[action].visit_count
 
-            uct_value = (total_reward / (visit_count + 1e-6)) + C * np.sqrt(np.log(node.visit_count + 1) / (visit_count + 1))
+            #check if the action already has an associated child node
+            if action.item() not in node.children:
+                child = Node(state=None, parent=node, action=action.item())
+                node.add_child(action.item(), child)
+            else:
+                child = node.children[action.item()]
+
+            total_reward = child.total_reward / 200 #Since our max reward is 200 we have to scale it to make it fair for exploration value
+            visit_count = child.visit_count
+
+            uct_value = (total_reward / (visit_count + 1e-6)) + C * np.sqrt(np.log(node.visit_count + 1) / (visit_count + 1e-6))
+
+            # if node == self.root:
+            #     print(f"Action: {action}")
+            #     print(f"  - Total Reward: {total_reward}")
+            #     print(f"  - Visit Count: {visit_count}")
+            #     print(f"  - Node Visit Count (parent): {node.visit_count}")
+            #     print(f"  - UCT Value: {uct_value}")
+            #     print(f"  - Exploration value: { C * np.sqrt(np.log(node.visit_count + 1) / (visit_count + 1e-6))}")
+
+
             if uct_value > best_value:
                 best_value = uct_value
-                child = node.children.get(action) or Node(state=None, parent=node, action=action.item())
-                node.children.setdefault(action, child)
                 best_nodes = [child]
-            #To not have a bias towards lower indicies
             elif uct_value == best_value:
-                child = node.children.get(action) or Node(state=None, parent=node, action=action.item())
-                node.children.setdefault(action, child)
                 best_nodes.append(child)
+
             uct_values.append(uct_value)
-        return random.choice(best_nodes)
+        selected_node = random.choice(best_nodes)
+        # if node==self.root:
+        #     print("SELECTED NODE: " + str(selected_node.action))
+        #     print("visit count: " + str(selected_node.visit_count))
+        return selected_node 
     
 
     def expand(self, node):
@@ -107,13 +123,17 @@ class MCTS:
     # Select the action with the highest visit count from the root's children
     def select_best_action(self, node):
         # Extract visit counts from children
-        most_visited_node = None
+        most_visited_nodes = [None]
         most_visits = -float('inf')
+        print(len(node.children.keys()))
         for action in node.children.keys():
+            print("Visit Count: " + str(node.children[action].visit_count))
             if(node.children[action].visit_count > most_visits):
-                most_visited_node = node.children[action]
+                most_visited_nodes = [node.children[action]]
                 most_visits = node.children[action].visit_count
-        
+            elif (node.children[action].visit_count == most_visits):
+                most_visited_nodes.append(node.children[action])
+        print("Most visits: " + str(most_visits))
         # Calculate softmax probabilities
         # probabilities = self.softmax(visit_counts)
         # probabilities = np.multiply(probabilities, self.game.get_legal_moves(node).detach().numpy())
@@ -121,7 +141,7 @@ class MCTS:
         # Select a child based on the softmax probabilities
         # selected_index = np.random.choice(len(node.children), p=probabilities)
         
-        return most_visited_node
+        return random.choice(most_visited_nodes)
 
 
     def reset(self):

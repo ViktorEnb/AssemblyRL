@@ -124,7 +124,6 @@ def test_matrix_multiplication():
 def test_dot_product():
     game = DotProduct2x1(32, 32)
     instructions = [
-                #calculating target[0]
                 "movl (%0) %%eax",   
                 "movl 4(%0) %%ebx",  
                 "movl (%1) %%ecx",    
@@ -144,11 +143,10 @@ def test_dot_product():
 def test_multiplication():
     game = DotProduct1x1(32, 32)
     instructions = [
-                #calculating target[0]
                 "movl (%0) %%eax",   
-                "movl (%1) %%ecx",    
-                "imull %%eax %%ecx",
-                "movl %%ecx (%2)",
+                "movl (%1) %%ebx",    
+                "imull %%eax %%ebx",
+                "movl %%ebx (%2)",
                 "END"
                 ]
     node = Node(state=game.initialize_state(), parent=None)

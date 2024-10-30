@@ -58,17 +58,7 @@ class Agent:
             batch = []
             node = self.mcts.root
             while not self.game.is_terminal(node):
-                # with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_threads) as executor:
-                #     # Submit tasks to the executor using a lambda function
-                #     futures = [
-                #         executor.submit(
-                #             lambda: self.mcts.rollout(self.policy_network, self.value_network, node)
-                #         )
-                #         for _ in range(20)
-                #     ]
-                    
-                    # As each thread completes, process the results
-                for j in range(50):
+                for j in range(1000):
                     end_node, reward = self.mcts.rollout(self.policy_network, self.value_network, node)
                     game = {"game": end_node.get_actions(), "reward": reward}
                     batch.append(game)

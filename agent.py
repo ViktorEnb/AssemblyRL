@@ -70,7 +70,7 @@ class Agent:
                 #     ]
                     
                     # As each thread completes, process the results
-                for j in range(50):
+                for j in range(1000):
                     end_node, reward = self.mcts.rollout(self.policy_network, self.value_network, node)
                     # for future in concurrent.futures.as_completed(futures):
                     # end_node, reward = future.result()
@@ -79,6 +79,7 @@ class Agent:
                     
                     if reward > self.highest_reward:
                         print("new best reward: " + str(reward))
+                    if reward >= self.highest_reward:
                         current_best_game = game
                         self.highest_reward = reward
                 node = self.mcts.select_best_action(node)
@@ -87,7 +88,7 @@ class Agent:
 
             #Only use the best games for training (this only works if we don't use a value network)
             batch_sorted = sorted(batch, key=lambda x: x['reward'], reverse=True)
-            num_games_to_keep = int(len(batch_sorted) * 1)
+            num_games_to_keep = int(len(batch_sorted) * 0.005)
             top_batch = batch_sorted[:num_games_to_keep]
             print("Length of training: " + str((len(top_batch))))
             start_time = time.time()
@@ -194,7 +195,7 @@ class Agent:
             index = np.argmax(action_probs)
             selected_action = self.game.get_actions()[index]
             # selected_action = np.random.choice(self.game.get_actions(), p=action_probs)
-            print("Selecting action: ", selected_action)#, "which is ", self.game.assembly.decode(selected_action.item()))
+            print("Selecting action: ", selected_action, "which is ", self.game.assembly.decode(selected_action.item()))
             node = Node(self.game.apply_action(node.state, selected_action), node, action=selected_action)
             nodes.append(node)
         print("Got reward: ", self.game.get_reward(node))

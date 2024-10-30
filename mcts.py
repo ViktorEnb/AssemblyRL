@@ -37,7 +37,9 @@ class MCTS:
             #Remove illegal moves
             action_probs = torch.mul(action_probs, self.game.get_legal_moves(node)).detach().numpy()
             action_probs = 1.0 / sum(action_probs) * action_probs
-            action = np.random.choice(self.game.get_actions())
+            action = np.random.choice(self.game.get_actions(), p=action_probs)
+            while self.game.get_legal_moves(node)[action] == 0:
+                action = np.random.choice(self.game.get_actions())    
             if action not in node.children:
                 child_node = Node(state=None, parent=node, action = action)
                 node.add_child(action, child_node)
@@ -125,23 +127,16 @@ class MCTS:
         # Extract visit counts from children
         most_visited_nodes = [None]
         most_visits = -float('inf')
-        print(len(node.children.keys()))
         for action in node.children.keys():
-            print("Visit Count: " + str(node.children[action].visit_count))
             if(node.children[action].visit_count > most_visits):
                 most_visited_nodes = [node.children[action]]
                 most_visits = node.children[action].visit_count
             elif (node.children[action].visit_count == most_visits):
                 most_visited_nodes.append(node.children[action])
-        print("Most visits: " + str(most_visits))
-        # Calculate softmax probabilities
-        # probabilities = self.softmax(visit_counts)
-        # probabilities = np.multiply(probabilities, self.game.get_legal_moves(node).detach().numpy())
-        # probabilities = 1.0 / sum(probabilities) * probabilities
-        # Select a child based on the softmax probabilities
-        # selected_index = np.random.choice(len(node.children), p=probabilities)
+
+        selected_node = random.choice(most_visited_nodes)
         
-        return random.choice(most_visited_nodes)
+        return selected_node
 
 
     def reset(self):

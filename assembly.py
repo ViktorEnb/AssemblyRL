@@ -319,6 +319,12 @@ class AssemblyGame(Game):
                 previous_moves[node.action] = 1 
             node = node.parent
         ret = torch.matmul(self.illegal_moves_matrix, previous_moves)
+        print("ret: ", ret)
+        for i in range(len(previous_moves)):
+            if ret[i].item() == 1:
+                print(self.assembly.decode(i), "  ", ret[i])
+            else:
+                print(self.assembly.decode(i), "  ", ret[i])
         for i in range(len(previous_moves)):
             print(self.assembly.decode(i), "  ", ret[i])
             print(self.assembly.decode(i), "   ", previous_moves[i].item())

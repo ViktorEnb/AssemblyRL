@@ -32,9 +32,9 @@ class MCTS:
             #Remove illegal moves
             action_probs = torch.mul(action_probs, self.game.get_legal_moves(node)).detach().numpy()
             action_probs = 1.0 / sum(action_probs) * action_probs
-            action = np.random.choice(self.game.get_actions(), p=action_probs)
-            while self.game.get_legal_moves(node)[action] == 0:
-                action = np.random.choice(self.game.get_actions())    
+            # action = np.random.choice(self.game.get_actions())
+            # while self.game.get_legal_moves(node)[action] == 0:
+            action = np.random.choice(self.game.get_actions(), p=action_probs)    
             if action not in node.children:
                 child_node = Node(state=None, parent=node, action = action)
                 node.add_child(action, child_node)
@@ -47,7 +47,7 @@ class MCTS:
         return node, reward.item()
 
     def select(self, node):
-        C = 3  #exploration parameter
+        C = 5  #exploration parameter
         best_value = -float('inf')
         best_nodes = []
         uct_values = []
@@ -69,7 +69,7 @@ class MCTS:
             uct_value = (total_reward / (visit_count + 1e-6)) + C * np.sqrt(np.log(node.visit_count + 1) / (visit_count + 1e-6))
 
             # if node == self.root:
-            #     print(f"Action: {action}")
+            #     print(f"Action: {action.item()}: {self.game.assembly.decode(action)}")
             #     print(f"  - Total Reward: {total_reward}")
             #     print(f"  - Visit Count: {visit_count}")
             #     print(f"  - Node Visit Count (parent): {node.visit_count}")

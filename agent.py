@@ -37,16 +37,6 @@ class Agent:
         self.training_time = 0 #Time spent training networks
         self.action_dict = {}
 
-    def get_action(self, node):
-        # Perform MCTS rollouts
-        for _ in range(20):  # Perform 100 rollouts per action selection
-            self.mcts.rollout(self.policy_network, node)
-
-        # Select action based on visit counts
-        best_node = self.mcts.select_best_action(node)
-        return best_node
-
-
     def train(self, num_iterations):
         current_best_game = None
         for i in range(num_iterations):
@@ -58,7 +48,7 @@ class Agent:
             batch = []
             node = self.mcts.root
             while not self.game.is_terminal(node):
-                for j in range(1000):
+                for j in range(2000):
                     end_node, reward = self.mcts.rollout(self.policy_network, self.value_network, node)
                     game = {"game": end_node.get_actions(), "reward": reward}
                     batch.append(game)
@@ -89,6 +79,7 @@ class Agent:
             if self.save:
                 self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
             self.save_game(current_best_game, i)      
+            
     def save_game(self, game, iteration):        
         actions = []
         for d in game["game"]:

@@ -53,6 +53,13 @@ def test_legal_moves():
         "movl %%ecx 8(%2)"
         # "movl %%ecx 4(%2)"
           
+        "movl 4(%0) %%eax",
+        "movl 4(%0) %%ebx",
+        "movl %%ebx 4(%2)"
+        # "movl %%ebx 4(%2)"
+
+        # "add %%ecx %%ecx", 
+        # "movl (%1) %%ecx"  
     ]
     for instruction in instructions:
         action = game.assembly.encode(instruction) 
@@ -61,7 +68,7 @@ def test_legal_moves():
         current = current.children[action]  
         agent.mcts.expand(current)
     print(game.get_legal_moves(current))
-
+    
 def train_on_swap_2_elements():
     repr_size = 32
     hidden_size = 32
@@ -70,7 +77,15 @@ def train_on_swap_2_elements():
     agent.train(num_iterations=300)  
     agent.play_game()
 
-
+def train_on_multiplication_with_headstart():
+    game = DotProduct1x1(16,16)
+    agent = Agent(game, 16,16, game.get_num_actions(), load=False)
+    root = Node(state=game.initialize_state(), parent=None)
+    root1 = Node(state=game.apply_action(root.state, game.assembly.encode("movl (%0) %%eax")), action=game.assembly.encode("movl (%0) %%eax"),parent=root)
+    root2 = Node(state=game.apply_action(root1.state, game.assembly.encode("movl (%1) %%ebx")), action=game.assembly.encode("movl (%1) %%ebx"),parent=root1)
+    root3 = Node(state=game.apply_action(root2.state, game.assembly.encode("imull %%ebx %%eax")), action=game.assembly.encode("imull %%ebx %%eax"),parent=root2)
+    agent.mcts.root = root3
+    agent.train(num_iterations=1)
 def test_swap_2_elements():
     #Tests that basic assembly for swapping two numbers get 100% pass rate
     game = Swap2Elements(32, 32)
@@ -157,6 +172,11 @@ def test_multiplication():
     for instruction in instructions:
         encoded_action = game.assembly.encode(instruction)
         node = Node(state=game.apply_action(node.state, encoded_action), parent=node, action=encoded_action)
+    print(game.assembly.encode("movl (%0) %%eax"))
+    print(game.assembly.encode("movl (%1) %%ebx"))
+    print(game.assembly.encode("imull %%ebx %%eax"))
+    print(game.assembly.encode("movl %%eax (%2)"))
+
     print(game.get_reward(node))
 
 def test_matrix_encoder():

@@ -50,11 +50,15 @@ def test_legal_moves():
     agent.mcts.expand(current)
     instructions = [
         "movl 8(%0) %%ecx", 
-        "add %%ecx %%ecx", 
-        "movl (%1) %%ecx"  
+        "movl %%ecx 8(%2)"
+        # "movl %%ecx 4(%2)"
+          
     ]
     for instruction in instructions:
-        current = current.children[game.assembly.encode(instruction)]  
+        action = game.assembly.encode(instruction) 
+        child = Node(state=None, parent=current, action=action)
+        current.add_child(action, child)
+        current = current.children[action]  
         agent.mcts.expand(current)
     print(game.get_legal_moves(current))
 
@@ -290,4 +294,4 @@ def peachpy_matmul():
     print(C)
 
 if __name__ == "__main__":
-    test_multiplication()
+    test_legal_moves()

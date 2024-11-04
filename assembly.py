@@ -52,11 +52,10 @@ class Assembly:
         for (i, line) in enumerate(self.vocab):
             words_in_line = line.split(" ")
             words_in_instruction = instruction.split(" ")
-
             if len(words_in_line) != len(words_in_instruction):
                 self.previous_line_sizes += self.line_sizes[i]
                 continue
-                
+
             current_line_index = 0
             remaining = self.line_sizes[i]
             for (j, word_in_line) in enumerate(words_in_line):
@@ -70,6 +69,7 @@ class Assembly:
                     current_line_index += remaining * self.input_mem_locs.index(word_in_instruction)
                 elif word_in_line == "TMEM" and word_in_instruction in self.target_mem_locs:
                     remaining //= len(self.target_mem_locs)
+                    current_line_index += remaining * self.target_mem_locs.index(word_in_instruction)
                 elif word_in_line == word_in_instruction:
                     pass
                 else:
@@ -319,17 +319,21 @@ class AssemblyGame(Game):
                 previous_moves[node.action] = 1 
             node = node.parent
         ret = torch.matmul(self.illegal_moves_matrix, previous_moves)
+        for i in range(len(previous_moves)):
+            print(self.assembly.decode(i), "  ", ret[i])
+            print(self.assembly.decode(i), "   ", previous_moves[i].item())
+            
         ret[torch.abs(ret - 1.0) < 1e-3] = 1.0 #To fix rounding error bug
         ret = torch.floor(ret)
         ret = torch.clamp(ret, max=1.0, min=0.0)
         
         #Below is a nice print for debugging information when creating a new target algorithm
 
-        # for i in range(len(previous_moves)):
-        #     if ret[i].item() == 1:
-        #         print(self.assembly.decode(i), "   legal")
-        #     else:
-        #         print(self.assembly.decode(i), "   illegal")
+        for i in range(len(previous_moves)):
+            if ret[i].item() == 1:
+                print(self.assembly.decode(i), "   legal")
+            else:
+                print(self.assembly.decode(i), "   illegal")
         return ret
 
     def write_game(self, actions, filename, meta_info = []):

@@ -10,7 +10,6 @@ class Node:
 
     def add_child(self, action, child_node):
         self.children[action] = child_node
-
     def update(self, reward):
         self.visit_count += 1
         self.total_reward += reward

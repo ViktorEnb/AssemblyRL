@@ -27,7 +27,7 @@ class Game:
 
 
 class ToyGameWithReprNetwork(Game):
-    def __init__(self, depth=9, width=2):
+    def __init__(self, depth=5, width=2):
         self.depth = depth
         self.width = width
         self.tree = self.generate_random_tree(depth, width)
@@ -35,7 +35,8 @@ class ToyGameWithReprNetwork(Game):
         self.rewards = self.generate_random_rewards()
         self.state_size = len(self.tree.keys())
         self.has_repr_network = True
-        self.repr_network = Representation(self.state_size, self.width, self.state_size)
+        self.repr_size = self.state_size
+        self.repr_network = Representation(self.state_size, self.width, self.repr_size)
         self.repr_optimizer = optim.Adam(self.repr_network.parameters(), lr=0.0001, weight_decay=1e-5)
 
     def generate_random_tree(self, depth, width):

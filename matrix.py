@@ -225,11 +225,13 @@ class MatrixMultiplication(AssemblyGame):
                     #We have to have moved to the previous target destination first
                     #this is just a way to reduce arbitrary complexity
                     #minus because target_dest_map is negative
-                    reg_dest_term = reg_dest_map[words[1]]*2 #- target_dest_map[self.assembly.target_mem_locs[index-1]]
-                else:
-                    reg_dest_term = reg_dest_map[words[1]]*2
 
-                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]]*2 + target_dest_map[words[3]]  * (2*sum(reg_dest_map[words[1]]) + 1)
+                    #the 0.7 is arbitrary value slightly bigger than 0.5 in order to counterract that one of the indicies are taken
+                    reg_dest_term = reg_dest_map[words[1]] * 0.5 - target_dest_map[self.assembly.target_mem_locs[index-1]] * 0.7
+                else:
+                    reg_dest_term = reg_dest_map[words[1]]
+
+                self.illegal_moves_matrix[action, :] = reg_dest_term + target_dest_map[words[3]] * 2
 
 
 
@@ -308,7 +310,12 @@ class DotProduct2x1(AssemblyGame):
             #Don't allow to mov un handled registers
             elif words[0] == "movl" and words[1] in self.assembly.registers:
                 self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]]
-            
+            elif words[0] == "movl" and words[3] in self.assembly.registers:
+                index = self.assembly.registers.index(words[3])
+                if index>0:    
+                    #We only allow to move to eg %%ebx if %%eax has been moved to etc.
+                    #This is just to the complexity, all registers are arbitrary so the order doesn't matter
+                    self.illegal_moves_matrix[action, :] = reg_dest_map[self.assembly.registers[index-1]]
             elif words[0] == "imull":
                 self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] * 0.5 + reg_dest_map[words[3]] * 0.5
 
@@ -321,8 +328,7 @@ class DotProduct2x1(AssemblyGame):
             #If the src reg has been filled AND we haven't allocated to this space before
             #If you think about it this works
             if words[0] == "movl" and words[3] in self.assembly.target_mem_locs:
-                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]]*2 + target_dest_map[words[3]]  * (2*sum(reg_dest_map[words[1]]) + 1)
-
+                self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] + target_dest_map[words[3]] * 2
 
 
     
@@ -400,6 +406,13 @@ class DotProduct1x1(AssemblyGame):
             #Don't allow to mov un handled registers
             elif words[0] == "movl" and words[1] in self.assembly.registers:
                 self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]]
+            
+            # elif words[0] == "movl" and words[3] in self.assembly.registers:
+            #     index = self.assembly.registers.index(words[3])
+            #     if index>0:    
+            #         #We only allow to move to eg %%ebx if %%eax has been moved to etc.
+            #         #This is just to the complexity, all registers are arbitrary so the order doesn't matter
+            #         self.illegal_moves_matrix[action, :] = reg_dest_map[self.assembly.registers[index-1]]
             
             elif words[0] == "imull":
                 self.illegal_moves_matrix[action, :] = reg_dest_map[words[1]] * 0.5 + reg_dest_map[words[3]] * 0.5

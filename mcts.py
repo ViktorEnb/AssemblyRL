@@ -9,45 +9,45 @@ class MCTS:
     def __init__(self, game):
         self.game = game
         self.root = Node(state=self.game.initialize_state(), parent=None)
-    def rollout(self, policy_network, value_network, node, _lambda = 0):
+    def rollout(self, node, policy_network = None, policy_and_value = None):
+        #Performs a rollout either with a policy netowrk or with a policy combined with value network
+        #Exactly one of the policy_network, policy_and_value network has to not be None
+
         # 1. Selection with UCB
         while node.is_expanded and not self.game.is_terminal(node):
             #Wait for node to expand in another thread
-            node = self.select(node)
+            node = self.select(node, policy_network)
+        reward = 0        
+        # 2. Simulating a reward
+        if policy_and_value == None:
+            while not self.game.is_terminal(node):
+                self.expand(node)
+                logits = policy_network(node.state)
+                action_probs = nn.functional.softmax(logits, dim=-1).to("cpu")
+                #Remove illegal moves
+                action_probs = torch.mul(action_probs, self.game.get_legal_moves(node)).detach().numpy()
+                action_probs = 1.0 / sum(action_probs) * action_probs
+                # action = np.random.choice(self.game.get_actions())
+                # while self.game.get_legal_moves(node)[action] == 0:
+                action = np.random.choice(self.game.get_actions(), p=action_probs)    
+                if action not in node.children:
+                    child_node = Node(state=None, parent=node, action = action)
+                    node.add_child(action, child_node)
+                node = node.children[action]
+            reward = self.game.get_reward(node)
 
-        # 2. Use value network for more accurate reward estimate  
-        reward = torch.tensor([0.0])
-        if _lambda > 0:    
-            self.expand(node)     
-            reward += _lambda * value_network(node.state)
-            if _lambda == 1:
-                self.backpropagate(node, reward)
-                return 
-        
-        # 3. Simulating a reward
-        while not self.game.is_terminal(node):
+        elif policy_network == None:
             self.expand(node)
-            logits = policy_network(node.state)
-            action_probs = nn.functional.softmax(logits, dim=-1).to("cpu")
-            #Remove illegal moves
-            action_probs = torch.mul(action_probs, self.game.get_legal_moves(node)).detach().numpy()
-            action_probs = 1.0 / sum(action_probs) * action_probs
-            # action = np.random.choice(self.game.get_actions())
-            # while self.game.get_legal_moves(node)[action] == 0:
-            action = np.random.choice(self.game.get_actions(), p=action_probs)    
-            if action not in node.children:
-                child_node = Node(state=None, parent=node, action = action)
-                node.add_child(action, child_node)
-            node = node.children[action]
-        reward += (1 - _lambda) * self.game.get_reward(node)
+            reward = policy_and_value(node.state)[0].item() #Estimate reward with network
 
         # 4. Backpropagation
-        self.backpropagate(node, reward.item())
+        self.backpropagate(node, reward)
 
-        return node, reward.item()
+        return node, reward
 
-    def select(self, node):
-        C = 5  #exploration parameter
+    def select(self, node, policy_network):
+        C = 3  #exploration parameter
+        D = 1 #policy network bias parameter
         best_value = -float('inf')
         best_nodes = []
         uct_values = []
@@ -65,8 +65,9 @@ class MCTS:
 
             total_reward = child.total_reward / 200 #Since our max reward is 200 we have to scale it to make it fair for exploration value
             visit_count = child.visit_count
+            P_s_a = policy_network(node.state)[action]
 
-            uct_value = (total_reward / (visit_count + 1e-6)) + C * np.sqrt(np.log(node.visit_count + 1) / (visit_count + 1e-6))
+            uct_value = (total_reward / (visit_count + 1e-6)) + D * P_s_a +  C * np.sqrt(np.log(node.visit_count + 1) / (visit_count + 1e-6))
 
             # if node == self.root:
             #     print(f"Action: {action.item()}: {self.game.assembly.decode(action)}")
@@ -126,7 +127,6 @@ class MCTS:
                 most_visited_nodes.append(node.children[action])
 
         selected_node = random.choice(most_visited_nodes)
-        
         return selected_node
 
 

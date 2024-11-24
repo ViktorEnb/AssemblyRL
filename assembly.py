@@ -319,15 +319,14 @@ class AssemblyGame(Game):
                 previous_moves[node.action] = 1 
             node = node.parent
         ret = torch.matmul(self.illegal_moves_matrix, previous_moves)
-        print("ret: ", ret)
-        for i in range(len(previous_moves)):
-            if ret[i].item() == 1:
-                print(self.assembly.decode(i), "  ", ret[i])
-            else:
-                print(self.assembly.decode(i), "  ", ret[i])
-        for i in range(len(previous_moves)):
-            print(self.assembly.decode(i), "  ", ret[i])
-            print(self.assembly.decode(i), "   ", previous_moves[i].item())
+        # for i in range(len(previous_moves)):
+        #     if ret[i].item() == 1:
+        #         print(self.assembly.decode(i), "  ", ret[i])
+        #     else:
+        #         print(self.assembly.decode(i), "  ", ret[i])
+        # for i in range(len(previous_moves)):
+        #     print(self.assembly.decode(i), "  ", ret[i])
+        #     print(self.assembly.decode(i), "   ", previous_moves[i].item())
             
         ret[torch.abs(ret - 1.0) < 1e-3] = 1.0 #To fix rounding error bug
         ret = torch.floor(ret)
@@ -335,11 +334,11 @@ class AssemblyGame(Game):
         
         #Below is a nice print for debugging information when creating a new target algorithm
 
-        for i in range(len(previous_moves)):
-            if ret[i].item() == 1:
-                print(self.assembly.decode(i), "   legal")
-            else:
-                print(self.assembly.decode(i), "   illegal")
+        # for i in range(len(previous_moves)):
+        #     if ret[i].item() == 1:
+        #         print(self.assembly.decode(i), "   legal")
+        #     else:
+        #         print(self.assembly.decode(i), "   illegal")
         return ret
 
     def write_game(self, actions, filename, meta_info = []):

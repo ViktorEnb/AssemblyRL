@@ -44,22 +44,16 @@ def test_legal_moves():
     hidden_size = 32
     #Make the results non-random to be able to test performance on different machines
     torch.manual_seed(1)
-    game = MatrixMultiplication(repr_size, hidden_size)
+    game = DotProduct2x1(repr_size, hidden_size)
     agent = Agent(game, repr_size, hidden_size, game.get_num_actions(), load=False)
     current = agent.mcts.root
     agent.mcts.expand(current)
     instructions = [
-        "movl 8(%0) %%ecx", 
-        "movl %%ecx 8(%2)"
-        # "movl %%ecx 4(%2)"
-          
-        "movl 4(%0) %%eax",
-        "movl 4(%0) %%ebx",
-        "movl %%ebx 4(%2)"
+        "movl (%0) %%eax",
+        "movl %%eax (%2)"
+        # "movl 4(%0) %%eax",
+        # "movl 4(%0) %%ebx",
         # "movl %%ebx 4(%2)"
-
-        # "add %%ecx %%ecx", 
-        # "movl (%1) %%ecx"  
     ]
     for instruction in instructions:
         action = game.assembly.encode(instruction) 
@@ -314,4 +308,4 @@ def peachpy_matmul():
     print(C)
 
 if __name__ == "__main__":
-    test_legal_moves()
+    train_on_swap_2_elements()

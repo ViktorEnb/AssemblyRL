@@ -14,19 +14,21 @@ import time
 import concurrent.futures
 
 class Agent:
-    def __init__(self, game, repr_size, hidden_size, action_dim, load=False, save=False):
+    def __init__(self, game, repr_size, hidden_size, action_size, load=False, save=False):
         self.game = game
         self.mcts = MCTS(game)
         self.repr_size = repr_size
-        self.action_dim = action_dim
+        self.action_size = action_size
         # self.device = ("cuda" if torch.cuda.is_available() else "cpu") 
         self.device = "cpu"
-        self.policy_network = Policy(repr_size, hidden_size, action_dim).to(self.device)
-        self.policy_optimizer = optim.Adam(self.policy_network.parameters(), lr=0.001)
-        # self.policy_network = None
-        # self.policy_value = ValueAndPolicy(repr_size, hidden_size, action_dim)
-        # self.policy_value_optimizer = optim.Adam(self.policy_value.parameters(), lr=0.01)
-        self.policy_value = None
+
+        # self.policy_network = Policy(repr_size, hidden_size, action_size).to(self.device)
+        # self.policy_optimizer = optim.Adam(self.policy_network.parameters(), lr=0.001)
+        # self.policy_value = None
+      
+        self.policy_network = None
+        self.policy_value = ValueAndPolicy(repr_size, hidden_size, action_size)
+        self.policy_value_optimizer = optim.Adam(self.policy_value.parameters(), lr=0.002)
         if load:
             self.load_models(os.path.join(".", "saved_models", self.game.algo_name))
 
@@ -53,19 +55,29 @@ class Agent:
             node = self.mcts.root
 
             while not self.game.is_terminal(node):
-                for j in range(10):
-                    end_node, reward = self.mcts.rollout(node, policy_network=policy_network)
+                for j in range(20):
+                    # (One of policy_network, policy_and_value will be none)
+                    end_node, reward = self.mcts.rollout(node, policy_network=self.policy_network, policy_and_value=self.policy_value)                    
                     game = {"game": end_node.get_actions(), "reward": reward}
                     if self.policy_network != None:
-                        batch.append(game) #Append every game for maximal batch size
+                        batch.append(game) #Append all games and sort out games later
+                    else:
+                        if self.game.is_terminal(end_node):
+                            #We have to simulate the reward in this case as the reward we have was
+                            #simply an estimation by the value networktests
+                            temp_node = Node(self.game.initialize_state(), None, None)
+                            actions = game["game"]
+                            for action in actions:
+                                temp_node = Node(self.game.apply_action(node.state, action["action"]), temp_node, action=action["action"])
+                            reward = self.game.get_reward(temp_node)
+
+                            batch.append({"game": actions, "reward": reward})  
                     if reward >= self.highest_reward:
                         current_best_game = game
                         self.highest_reward = reward
-
-                if self.policy_value != None:
-                    batch.append(current_best_game) #Only append best games
                 node = self.mcts.select_best_action(node)
 
+            
             reward = current_best_game["reward"]
             print("Got reward ", reward)
             if self.policy_network != None:
@@ -84,7 +96,7 @@ class Agent:
         #Sorts out the best games and trains the policy network on them
         #This approach does not work for training the value network as it will tend to a constant function in case all of the best games have high reward
         batch_sorted = sorted(games, key=lambda x: x['reward'], reverse=True)
-        num_games_to_keep = int(len(batch_sorted) * 0.05)
+        num_games_to_keep = int(len(batch_sorted) * 0.1)
         top_batch = batch_sorted[:num_games_to_keep]
         print("Length of training: " + str((len(top_batch))))
         start_time = time.time()
@@ -100,32 +112,9 @@ class Agent:
     def update_networks(self, batch):
         start_training = time.time()
 
-        policy_loss = 0
-        policy_loss_fn = torch.nn.CrossEntropyLoss()
-        self.policy_optimizer.zero_grad()
-        self.game.repr_network.zero_grad()
-        #TRAINING POLICY NETWORK
-        for replay in batch:
-            current_state = self.game.initialize_state()
-            game = replay["game"]
-            reward = replay["reward"]
-            for move in game:
-                action = move["action"]
-                predicted_actions = self.policy_network(current_state)
-                current_state = self.game.apply_action(current_state, action)
-                if action in self.action_dict:
-                    self.action_dict[action] += 1
-                else:
-                    self.action_dict[action] = 1
-                policy_loss += policy_loss_fn(predicted_actions, torch.tensor(action).to(self.device))   
-        policy_loss.backward()
-        self.policy_optimizer.step()
-
-        
-        # policy_value_loss = 0
+        # policy_loss = 0
         # policy_loss_fn = torch.nn.CrossEntropyLoss()
-        # value_loss_fn = torch.nn.MSELoss()
-        # self.policy_value_optimizer.zero_grad()
+        # self.policy_optimizer.zero_grad()
         # self.game.repr_network.zero_grad()
         # #TRAINING POLICY NETWORK
         # for replay in batch:
@@ -134,18 +123,43 @@ class Agent:
         #     reward = replay["reward"]
         #     for move in game:
         #         action = move["action"]
-        #         predicted_reward = self.policy_value(current_state)[-1]
-        #         predicted_actions = self.policy_value(current_state)[:-1]
+        #         predicted_actions = self.policy_network(current_state)
         #         current_state = self.game.apply_action(current_state, action)
         #         if action in self.action_dict:
         #             self.action_dict[action] += 1
         #         else:
         #             self.action_dict[action] = 1
-        #         value_loss = value_loss_fn(torch.tensor(reward), predicted_reward)
-        #         policy_loss = policy_loss_fn(predicted_actions, torch.tensor(action).to(self.device))
-        #         policy_value_loss += value_loss + policy_loss   
-        # policy_value_loss.backward()
-        # self.policy_value_optimizer.step()
+        #         policy_loss += policy_loss_fn(predicted_actions, torch.tensor(action).to(self.device))   
+        # policy_loss.backward()
+        # self.policy_optimizer.step()
+
+        
+        policy_value_loss = 0
+        policy_loss_fn = torch.nn.CrossEntropyLoss()
+        value_loss_fn = torch.nn.MSELoss()
+        self.policy_value_optimizer.zero_grad()
+        self.game.repr_network.zero_grad()
+        #TRAINING POLICY NETWORK
+        for replay in batch:
+            current_state = self.game.initialize_state()
+            game = replay["game"]
+            reward = replay["reward"]
+            for move in game:
+                action = move["action"]
+                predicted_reward = self.policy_value(current_state)[-1]
+                predicted_actions = self.policy_value(current_state)[:-1]
+                current_state = self.game.apply_action(current_state, action)
+                if action in self.action_dict:
+                    self.action_dict[action] += 1
+                else:
+                    self.action_dict[action] = 1
+                value_loss = value_loss_fn(torch.tensor(reward), predicted_reward)
+                policy_loss = policy_loss_fn(predicted_actions, torch.tensor(action).to(self.device))
+                print("Value Loss: ", value_loss.item(), "  Policy loss: ", policy_loss.item())
+                print("reward: ", reward, "  predicted_reward: ", predicted_reward.item())
+                policy_value_loss += value_loss + policy_loss   
+        policy_value_loss.backward()
+        self.policy_value_optimizer.step()
 
         self.game.repr_optimizer.step()
         self.training_time += time.time() - start_training
@@ -169,18 +183,18 @@ class Agent:
             #With the optimizations made every node is not guranteed to have a state
             if node.state == None:
                 node.state = self.game.apply_action(node.parent.state, node.action)
-            logits = self.policy_network(node.state)
-            print("state")
+            network = self.policy_network if self.policy_network != None else self.policy_value
+            logits = network(node.state)[:self.action_size]
             print(node.state)
             action_probs = nn.functional.softmax(logits, dim=-1)
             #Remove illegal moves
             action_probs = torch.mul(action_probs, self.game.get_legal_moves(node)).detach().numpy()
-            action_probs = 1.0 / np.linalg.norm(action_probs) * action_probs
+            action_probs = 1.0 / sum(action_probs) * action_probs
             print(action_probs)
             index = np.argmax(action_probs)
             selected_action = self.game.get_actions()[index]
             # selected_action = np.random.choice(self.game.get_actions(), p=action_probs)
-            print("Selecting action: ", selected_action, "which is ", self.game.assembly.decode(selected_action.item()))
+            # print("Selecting action: ", selected_action, "which is ", self.game.assembly.decode(selected_action.item()))
             node = Node(self.game.apply_action(node.state, selected_action), node, action=selected_action)
             nodes.append(node)
         print("Got reward: ", self.game.get_reward(node))

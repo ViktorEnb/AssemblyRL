@@ -66,9 +66,9 @@ class ValueAndPolicy(nn.Module):
         x = self.fc1(x)
         x = self.relu(x)
         x = self.fc2(x)
-        value = torch.tensor([x[0]])
+        # value = torch.tensor([x[-1]])
 
-        #The last `action_size` elements are the policy probabilities
-        policy_logits = x[1:]
-        policy = F.softmax(policy_logits, dim=-1)  # Normalize to sum to 1
-        return torch.cat([value, policy], dim=-1)
+        # #The last `action_size` elements are the policy probabilities
+        # policy_logits = x[:-1]
+        # policy = F.softmax(policy_logits, dim=-1)
+        return x

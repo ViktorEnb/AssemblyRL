@@ -308,4 +308,4 @@ def peachpy_matmul():
     print(C)
 
 if __name__ == "__main__":
-    train_on_swap_2_elements()
+    train_on_toy_game()

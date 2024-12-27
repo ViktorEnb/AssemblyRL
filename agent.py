@@ -1,7 +1,7 @@
 from mcts import MCTS
 from game import Game
 from torch import nn
-from network import Policy, Value, ValueAndPolicy
+from network import Policy, ValueAndPolicy
 from node import Node
 from torch import optim
 import torch 
@@ -53,7 +53,7 @@ class Agent:
             node = self.mcts.root
 
             while not self.game.is_terminal(node):
-                for j in range(150):
+                for j in range(10):
                     end_node, reward = self.mcts.rollout(node, policy_network=policy_network)
                     game = {"game": end_node.get_actions(), "reward": reward}
                     if self.policy_network != None:
@@ -74,7 +74,10 @@ class Agent:
                 self.update_networks(batch)
             # if self.save:
             #     self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
-            # self.save_game(current_best_game, i)      
+            
+            # Saves the best assembly game to file
+            # if type(self.game) == AssemblyGame:
+            #     self.save_game(current_best_game, i)      
             
 
     def sort_and_train(self, games):

@@ -17,7 +17,7 @@ class Node:
         node = self
         actions = []
         while node.parent != None:
-            actions.append({"action": node.action, "state": node.state})
+            actions.append({"action": node.action})
             node = node.parent
         actions.reverse()
         return actions

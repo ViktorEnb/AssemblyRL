@@ -67,7 +67,7 @@ class MCTS:
             else:
                 child = node.children[action.item()]
 
-            total_reward = child.total_reward  #Since our max reward is 200 we have to scale it to make it fair for exploration value
+            total_reward = child.total_reward / 200 #Since our max reward is 200 we have to scale it to make it fair for exploration value
             visit_count = child.visit_count
             P_s_a = policy_network(node.state)[action]
 

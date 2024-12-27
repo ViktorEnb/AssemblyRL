@@ -85,7 +85,8 @@ class Agent:
             #     self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
             
             # Saves the best assembly game to file
-            if type(self.game) == AssemblyGame:
+            if isinstance(self.game,AssemblyGame):
+                print("Saving")
                 self.save_game(current_best_game, i)      
             
 

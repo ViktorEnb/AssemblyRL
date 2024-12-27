@@ -12,11 +12,10 @@ class MCTS:
     def rollout(self, node, policy_network = None, policy_and_value = None):
         #Performs a rollout either with a policy netowrk or with a policy combined with value network
         #Exactly one of the policy_network, policy_and_value network has to not be None
-
         # 1. Selection with UCB
         while node.is_expanded and not self.game.is_terminal(node):
-            #Wait for node to expand in another thread
-            node = self.select(node, policy_network)
+            network = policy_network if policy_network != None else policy_and_value
+            node = self.select(node, network)
         reward = 0        
         # 2. Simulating a reward
         if policy_and_value == None:
@@ -38,7 +37,7 @@ class MCTS:
 
         elif policy_network == None:
             self.expand(node)
-            reward = policy_and_value(node.state)[0].item() #Estimate reward with network
+            reward = policy_and_value(node.state)[-1].item() #Estimate reward with network
 
         # 4. Backpropagation
         self.backpropagate(node, reward)
@@ -46,7 +45,7 @@ class MCTS:
         return node, reward
 
     def select(self, node, policy_network):
-        C = 3  #exploration parameter
+        C = 4  #exploration parameter
         D = 1 #policy network bias parameter
         best_value = -float('inf')
         best_nodes = []

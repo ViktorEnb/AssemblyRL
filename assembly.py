@@ -116,6 +116,9 @@ class Assembly:
         
         return " ".join(list(reversed(instruction)))
 
+with open('config.yaml', 'r') as f:
+    params = yaml.safe_load(f)
+
 class AssemblyGame(Game):
     def __init__(self, repr_size, hidden_size):
         self.assembly = Assembly()

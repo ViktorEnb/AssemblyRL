@@ -154,8 +154,6 @@ class Agent:
                         self.action_dict[action] = 1
                     value_loss = value_loss_fn(torch.tensor(reward), predicted_reward)
                     policy_loss = policy_loss_fn(predicted_actions, torch.tensor(action).to(self.device))
-                    print("Value Loss: ", value_loss.item(), "  Policy loss: ", policy_loss.item())
-                    print("reward: ", reward, "  predicted_reward: ", predicted_reward.item())
                     policy_value_loss += value_loss + policy_loss   
             policy_value_loss.backward()
             self.policy_value_optimizer.step()

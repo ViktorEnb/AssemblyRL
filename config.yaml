@@ -1,0 +1,11 @@
+pol_val: True
+pol_val_lr: 0.002
+pol_net: False
+pol_net_lr: 0.001
+num_iterations: 20
+batch_size: 1
+best_game_perc: 0.1
+repr_lr: 0.0001
+repr_weight_decay: 0.00001
+mcts_exploration: 3
+mcts_network: 1 

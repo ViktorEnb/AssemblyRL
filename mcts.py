@@ -5,6 +5,11 @@ import torch
 import numpy as np
 import random 
 import time
+import yaml
+
+with open('config.yaml', 'r') as f:
+    params = yaml.safe_load(f)
+
 class MCTS:
     def __init__(self, game):
         self.game = game
@@ -45,8 +50,8 @@ class MCTS:
         return node, reward
 
     def select(self, node, policy_network):
-        C = 4  #exploration parameter
-        D = 1 #policy network bias parameter
+        C = params["mcts_exploration"]  #exploration parameter
+        D = params["mcts_network"] #policy network bias parameter
         best_value = -float('inf')
         best_nodes = []
         uct_values = []
@@ -62,11 +67,11 @@ class MCTS:
             else:
                 child = node.children[action.item()]
 
-            total_reward = child.total_reward / 200 #Since our max reward is 200 we have to scale it to make it fair for exploration value
+            total_reward = child.total_reward  #Since our max reward is 200 we have to scale it to make it fair for exploration value
             visit_count = child.visit_count
             P_s_a = policy_network(node.state)[action]
 
-            uct_value = (total_reward / (visit_count + 1e-6)) + D * P_s_a +  C * np.sqrt(np.log(node.visit_count + 1) / (visit_count + 1e-6))
+            uct_value = (total_reward / (visit_count + 1e-6)) + D * P_s_a + C * np.sqrt(np.log(node.visit_count + 1) / (visit_count + 1e-6))
 
             # if node == self.root:
             #     print(f"Action: {action.item()}: {self.game.assembly.decode(action)}")
@@ -102,7 +107,6 @@ class MCTS:
 
     def backpropagate(self, node, reward):
         current_node = node
-
         while current_node is not None:
             current_node.update(reward)
             current_node = current_node.parent

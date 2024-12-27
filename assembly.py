@@ -8,6 +8,7 @@ import os
 import time 
 import threading
 from peachpysimulator import PeachPyAssemblyExecutor
+import yaml
 
 def compile_and_link(c_path, exe_path, num=0):
     subprocess.run(["gcc", "-O0", "-c", c_path, "-o", "./tmp/tmp" + str(num) + ".o"], check=True)
@@ -115,7 +116,6 @@ class Assembly:
         
         return " ".join(list(reversed(instruction)))
 
-
 class AssemblyGame(Game):
     def __init__(self, repr_size, hidden_size):
         self.assembly = Assembly()
@@ -125,7 +125,7 @@ class AssemblyGame(Game):
         self.device = "cpu"
      
         self.repr_network = Representation(self.repr_size, self.assembly.vocab_size, hidden_size).to(self.device)
-        self.repr_optimizer = optim.Adam(self.repr_network.parameters(), lr=0.0001, weight_decay=1e-5)
+        self.repr_optimizer = optim.Adam(self.repr_network.parameters(), lr=params["repr_lr"], weight_decay=params["repr_weight_decay"])
         self.time_started = datetime.now() 
         self.generate_test_cases()
         if not self.validate_test_cases():

@@ -236,7 +236,8 @@ class AssemblyGame(Game):
         decoded_actions = []
         for action in actions:
             decoded_actions.append(self.assembly.decode(action))
-        if self.peachpy_simulate:
+
+        if self.peachpy_simulate: #This is the best alternative for simulation
             printf = self.peachpy_simulator.simulate(decoded_actions)
         else:
             printf = self.compile_and_run_file(decoded_actions)

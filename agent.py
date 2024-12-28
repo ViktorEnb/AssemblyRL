@@ -86,7 +86,6 @@ class Agent:
             
             # Saves the best assembly game to file
             if isinstance(self.game,AssemblyGame):
-                print("Saving")
                 self.save_game(current_best_game, i)      
             
 

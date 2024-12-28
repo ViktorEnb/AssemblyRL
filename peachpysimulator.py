@@ -145,9 +145,3 @@ if __name__ == "__main__":
             "movl %%edx 12(%2)"
             ]
     peachpysimulator.simulate(instructions)
-
-
-# MOV(eax, [reg_a])
-# MOV([reg_b + 4], eax)
-# MOV(eax, [reg_a + 4])
-# MOV([reg_b], eax)

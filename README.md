@@ -16,9 +16,9 @@ In order to use a policy (or value) network, one needs to be able to input a vec
 This approach differs from the representation algorithm in the DeepMind paper, where they use a transformer-like architecture. It's known that RNN tend to struggle to learn long sequences, which impacts this project negatively. Maybe I'll try to implement a transformer-like representation algorithm for sequence based games in the future, it'd be a good way to learn about transformers.
 
 # Implementing a points system for target algorithms
-We want to reward algorithms for being correct and fast, but also favor correctness over fastness (we shouldn't give a higher score for a fast-but-wrong algorithm than a correct-but-slow algorithm). Correctness is evaluated by generating test cases for each target algorithm, the algorithm gets points for each correctly passed test case, but also gets partial points if it partially passes a test. Fastness is evaluated by the length of the program (there's no branching so the length of the program will correlate very strongly to the time of execution).
+We want to reward algorithms for being correct and fast, but also prioritize correctness over fastness (we shouldn't give a higher score for a fast-but-wrong algorithm than a correct-but-slow algorithm). Correctness is evaluated by generating test cases for each target algorithm, the algorithm gets points for each correctly passed test case, but also gets partial points if it partially passes a test. Fastness is evaluated by the length of the program (there's no branching so the length of the program will correlate very strongly to the time of execution).
 
-`
+```
 passed_cases = self.get_nrof_passed_test_cases(printf)
 reward = passed_cases
 
@@ -30,14 +30,14 @@ if passed_cases == 100:
 #Give up to 50 points for fast algorithm if the algorithm is atleast somewhat-correct
 if passed_cases >= 40:
     reward += 50.0 * (self.max_lines - len(decoded_actions) + self.min_lines) / self.max_lines
-`
+```
 
 The partial points for partially passed tests is calculated according to the following code in `ger_nrof_passed_test_cases`
 
-`
+```
 #Passing a test case should be more important than passing lots of elements without passing cases
 return passed_tests * 70.0 / len(self.targets) + passed_element_counter * 30.0 / element_counter
-`
+```
  
 
 # Results

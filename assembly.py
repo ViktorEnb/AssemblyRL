@@ -129,7 +129,6 @@ class AssemblyGame(Game):
      
         self.repr_network = Representation(self.repr_size, self.assembly.vocab_size, hidden_size).to(self.device)
         self.repr_optimizer = optim.Adam(self.repr_network.parameters(), lr=params["repr_lr"], weight_decay=params["repr_weight_decay"])
-        self.time_started = datetime.now() 
         self.generate_test_cases()
         if not self.validate_test_cases():
             print("Test cases are in the wrong format.")

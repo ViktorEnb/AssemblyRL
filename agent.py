@@ -43,6 +43,7 @@ class Agent:
 
     def train(self, num_iterations):
         current_best_game = None
+        self.time_started = datetime.now()
         for i in range(num_iterations):
             print(i, "th iteration")
             self.mcts.reset()
@@ -201,11 +202,11 @@ class Agent:
         for d in game["game"]:
             actions.append(d["action"])
 
-        filename = os.path.join(".", "best_algos", self.game.time_started.strftime("%m-%d-%H-%M") + self.game.algo_name, "n=" + str(iteration) + "r=" + str(self.highest_reward) + ".c")        
+        filename = os.path.join(".", "best_algos", self.time_started.strftime("%m-%d-%H-%M") + self.game.algo_name, "n=" + str(iteration) + "r=" + str(self.highest_reward) + ".c")        
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
 
-        total_time = (datetime.now() - self.game.time_started).seconds
+        total_time = (datetime.now() - self.time_started).seconds
         perc_training = 0 if total_time == 0 else self.training_time * 100.0 / total_time 
         decoded_actions = []
         for action in actions:

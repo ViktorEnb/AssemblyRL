@@ -31,10 +31,13 @@ self.assembly.vocab = ["movl REG, REG",
     "END"
 ]
 ```
-In order to significantly reduce the size of the search space, I prevent the agent from choosing obviously incorrect moves. The 
+In order to significantly reduce the size of the search space, I prevent the agent from choosing obviously incorrect moves. The agent is explicitly prevented from doing any of the following
+- Using the value in a register before first allocating something from memory to that register
+- Moving from a register to itself
+- Allocating to the same memory address multiple times
 
 # Implementing a points system for target algorithms
-We want to reward algorithms for being correct and fast, but also prioritize correctness over fastness (we shouldn't give a higher score for a fast-but-wrong algorithm than a correct-but-slow algorithm). Correctness is evaluated by generating test cases for each target algorithm, the algorithm gets points for each correctly passed test case, but also gets partial points if it partially passes a test. Fastness is evaluated by the length of the program (there's no branching so the length of the program will correlate very strongly to the time of execution).
+We want to reward algorithms for being correct and fast, but also prioritize correctness over fastness (we shouldn't give a higher score for a fast-but-wrong algorithm than a correct-but-slow algorithm). Correctness is evaluated by generating test cases for each target algorithm. A assembly program with the test cases as input is run from python using the [PeachPy library](https://pypi.org/project/PeachPy/). The algorithm gets points for each correctly passed test case, but also gets partial points if it partially passes a test.  Fastness is evaluated by the length of the program (there's no branching so the length of the program will correlate very strongly to the time of execution).
 
 ```
 passed_cases = self.get_nrof_passed_test_cases(printf)
@@ -56,7 +59,7 @@ The partial points for partially passed tests is calculated according to the fol
 #Passing a test case should be more important than passing lots of elements without passing cases
 return passed_tests * 70.0 / len(self.targets) + passed_element_counter * 30.0 / element_counter
 ```
-
+As soon as we encounter an algorithm which gets a higher reward than any previous algorithsm, we save it to a file to make sure we don't lose track of good algorithms.
 
 # Results
 While testing out and tweaking the algorithm, adjusting parameters and so on, I created several different games of varying difficulty to test the algorithm on. These games are presented in the table below.

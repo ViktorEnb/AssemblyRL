@@ -72,7 +72,7 @@ While testing out and tweaking the algorithm, adjusting parameters and so on, I 
 
 +---------------------------------------------------+-----------------------+------------------+
 | Algorithm                                         | Name of Algorithm     | Time to Discover |
-+===================================================+=======================+=================+
++===================================================+=======================+==================+
 | ```c                                             
 | void supersimple(int* input0,int* target0){      
 | __asm__ (                                        
@@ -98,6 +98,23 @@ While testing out and tweaking the algorithm, adjusting parameters and so on, I 
 | );                                               
 | }                                                
 | ```                                               | "Swap2Elements"       | 47 seconds         |
+
+
++---------+---------+
+| Header  | Header  |
+| Column1 | Column2 |
++=========+=========+
+| 1. ab   | > This is a quote
+| 2. cde  | > For the second column 
+| 3. f    |
++---------+---------+
+| Second row spanning
+| on two columns
++---------+---------+
+| Back    |         |
+| to      |         |
+| one     |         |
+| column  |         |
 
 
 

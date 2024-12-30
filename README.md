@@ -70,9 +70,9 @@ While testing out and tweaking the algorithm, adjusting parameters and so on, I 
 - **"DotProduct2x1"** This is the target algorithm we're actually interested in, given two arrays with 2 elements each, compute the dot product and save it to a new memory address
 
 
-
++---------------------------------------------------+-----------------------+------------------+
 | Algorithm                                         | Name of Algorithm     | Time to Discover |
-|---------------------------------------------------|------------------------|-------------------|
++===================================================+=======================+=================+
 | ```c                                             
 | void supersimple(int* input0,int* target0){      
 | __asm__ (                                        
@@ -84,6 +84,7 @@ While testing out and tweaking the algorithm, adjusting parameters and so on, I 
 | );                                               
 | }                                                
 | ```                                              | "SimplestAssemblyGame"      | < 1 second        |
++--------------------------------------------------+-----------------------------+-------------------+
 | ```c                                             
 | void swap2elements(int* input0,int* target0){    
 | __asm__ (                                        

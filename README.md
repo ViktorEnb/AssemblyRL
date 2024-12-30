@@ -72,17 +72,17 @@ While testing out and tweaking the algorithm, adjusting parameters and so on, I 
 
 | Algorithm                                         | Name of Algorithm     | Time to Discover |
 |---------------------------------------------------|------------------------|-------------------|
-| <pre>```c                                        |
-| void supersimple(int* input0,int* target0){      |
-| __asm__ (                                        |
-| "movl (%0) , %%eax;"                             |
-| "movl %%eax , (%1);"                             |
+| ```c                                             |
+| void supersimple(int* input0,int* target0){ \n   |
+| __asm__ ( \n                                     |
+| "movl (%0) , %%eax;"    \n                       |
+| "movl %%eax , (%1);"    <br>                     |
 | :                                                |
 | : "r"(input0),"r"(target0)                       |
 | : "%eax", "%ebx", "%ecx", "%edx"                 |
 | );                                               |
 | }                                                |
-| ```</pre>                                        | "SimplestAssemblyGame"      | < 1 second        |
+| ```                                              | "SimplestAssemblyGame"      | < 1 second        |
 | ```c                                             |
 | void swap2elements(int* input0,int* target0){    |
 | __asm__ (                                        |

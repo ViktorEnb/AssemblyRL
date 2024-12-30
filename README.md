@@ -70,6 +70,18 @@ While testing out and tweaking the algorithm, adjusting parameters and so on, I 
 - **"DotProduct2x1"** This is the target algorithm we're actually interested in, given two arrays with 2 elements each, compute the dot product and save it to a new memory address
 
 
+| Algorithm   | Code                                     | Time to discover                           |
+| ----------- | ---------------------------------------- | ------------------------------------------ |
+| Linux / BSD | ```void supersimple(int* input0, int* target) {
+                    __asm__ (
+                        "movl (%0) , %%eax;"
+                }```                        
+                                                         | `/home/alice/.local/share`                 |
+| macOS       | `$HOME/Library/Application Support`      | `/Users/Alice/Library/Application Support` |
+| Windows     | `%LOCALAPPDATA%`                         | `C:\Users\Alice\AppData\Local`             |
+
+  
+
 | Algorithm                                         | Name of Algorithm     | Time to Discover |
 |---------------------------------------------------|------------------------|-------------------|
 | ```c                                             |

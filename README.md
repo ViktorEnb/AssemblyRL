@@ -70,52 +70,32 @@ While testing out and tweaking the algorithm, adjusting parameters and so on, I 
 - **"DotProduct2x1"** This is the target algorithm we're actually interested in, given two arrays with 2 elements each, compute the dot product and save it to a new memory address
 
 
-+---------------------------------------------------+-----------------------+------------------+
 | Algorithm                                         | Name of Algorithm     | Time to Discover |
-+===================================================+=======================+==================+
-| ```c                                             
-| void supersimple(int* input0,int* target0){      
-| __asm__ (                                        
-| "movl (%0) , %%eax;"                             
-| "movl %%eax , (%1);"                             
-| :                                                
-| : "r"(input0),"r"(target0)                       
-| : "%eax", "%ebx", "%ecx", "%edx"                 
-| );                                               
-| }                                                
-| ```                                              | "SimplestAssemblyGame"      | < 1 second        |
-+--------------------------------------------------+-----------------------------+-------------------+
-| ```c                                             
-| void swap2elements(int* input0,int* target0){    
-| __asm__ (                                        
-| "movl 4(%0) , %%eax;"                            
-| "movl %%eax , (%1);"                             
-| "movl (%0) , %%eax;"                             
-| "movl %%eax , 4(%1);"                            
-| :                                                
-| : "r"(input0),"r"(target0)                       
-| : "%eax", "%ebx", "%ecx", "%edx"                
-| );                                               
-| }                                                
+|---------------------------------------------------|------------------------|-------------------|
+| <pre>```c                                        |
+| void supersimple(int* input0,int* target0){      |
+| __asm__ (                                        |
+| "movl (%0) , %%eax;"                             |
+| "movl %%eax , (%1);"                             |
+| :                                                |
+| : "r"(input0),"r"(target0)                       |
+| : "%eax", "%ebx", "%ecx", "%edx"                 |
+| );                                               |
+| }                                                |
+| ```</pre>                                        | "SimplestAssemblyGame"      | < 1 second        |
+| ```c                                             |
+| void swap2elements(int* input0,int* target0){    |
+| __asm__ (                                        |
+| "movl 4(%0) , %%eax;"                            |
+| "movl %%eax , (%1);"                             |
+| "movl (%0) , %%eax;"                             |
+| "movl %%eax , 4(%1);"                            |
+| :                                                |
+| : "r"(input0),"r"(target0)                       |
+| : "%eax", "%ebx", "%ecx", "%edx"                |
+| );                                               |
+| }                                                |
 | ```                                               | "Swap2Elements"       | 47 seconds         |
-
-
-+---------+---------+
-| Header  | Header  |
-| Column1 | Column2 |
-+=========+=========+
-| 1. ab   | > This is a quote
-| 2. cde  | > For the second column 
-| 3. f    |
-+---------+---------+
-| Second row spanning
-| on two columns
-+---------+---------+
-| Back    |         |
-| to      |         |
-| one     |         |
-| column  |         |
-
 
 
 

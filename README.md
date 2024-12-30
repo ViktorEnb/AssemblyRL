@@ -2,7 +2,7 @@
 This is a personal project by Viktor Enbom that was inspired by [this DeepMind paper](https://www.nature.com/articles/s41586-023-06004-9). In the DeepMind paper the authors demonstrate a new algorithm for sorting arrays with 3 elements which is one line shorter than the state of art, entirely discovered by reinforcement learning. The main motivation for this project is to use a similar model as the authors of the DeepMind paper, and use it to search for clever 2x2 matrix multiplication algorithms. The original goal was to independently discover something like the [Strassen Algorithm](https://en.wikipedia.org/wiki/Strassen_algorithm), using reinforcement learning. As it turned out however, the search space for 2x2 matrix multiplication was too large for my algorithm to effectively search through it, as it requires 35+ lines of code (compared to the target algorithms in the DeepMind paper which only required around 10 lines of code). Therefore, I decided to limit the target algorithm to something simpler, a 2x1 vector dot product. 
 
 # Overview of algorithm
-Before delving into the details, let's describe the basic aim for this project and how we're going to approach it. We're looking for algorithms that can compute the dot product of two 2-d vectors with few lines of assembly code. The process of finding assembly algorithms will be looked at as a single-player game where an agent makes a sequence of moves and subsequently receives a reward. A move is just a line of assembly code (we will restrict the number of allowed assembly lines heavily, e.g. for matrix multiplication only `LOAD`, `ADD` and `MUL` are required), and the reward is calculated based on how correct the algorithm is (measured by automatically generated test-cases) and how short the algorithm is. The agent is a reinforcement learning entity which uses the MCTS algorithm combined with a policy network (and sometimes a value network, more on this later) for selecting promising moves. The network(s) is trained on past games played by the agent, taking into account each move and the reward.
+Before delving into the details, let's describe the basic aim for this project and how we're going to approach it. We're looking for algorithms that can compute the dot product of two 2-d vectors with few lines of assembly code. The process of finding assembly algorithms will be looked at as a single-player game where an agent makes a sequence of moves and subsequently receives a reward. A move is just a line of assembly code (we will restrict the number of allowed assembly lines heavily, e.g. for matrix multiplication only `MOV`, `ADD` and `MUL` are required), and the reward is calculated based on how correct the algorithm is (measured by automatically generated test-cases) and how short the algorithm is. The agent is a reinforcement learning entity which uses the MCTS algorithm combined with a policy network (and sometimes a value network, more on this later) for selecting promising moves. The network(s) is trained on past games played by the agent, taking into account each move and the reward.
 
 # MCTS algorithm
 
@@ -70,6 +70,32 @@ While testing out and tweaking the algorithm, adjusting parameters and so on, I 
 - **"DotProduct2x1"** This is the target algorithm we're actually interested in, given two arrays with 2 elements each, compute the dot product and save it to a new memory address
 
 
+| Algorithm                                         | Name of Algorithm     | Time to Discover |
+|---------------------------------------------------|------------------------|-------------------|
+| ```c                                             |
+| void supersimple(int* input0,int* target0){       |
+| __asm__ (                                        |
+| "movl (%0) , %%eax;"                             |
+| "movl %%eax , (%1);"                             |
+| :                                                |
+| : "r"(input0),"r"(target0)                       |
+| : "%eax", "%ebx", "%ecx", "%edx"                |
+| );                                               |
+| }                                                |
+| ```                                               | "SimplestAssemblyGame"      | < 1 second        |
+| ```c                                             |
+| void swap2elements(int* input0,int* target0){    |
+| __asm__ (                                        |
+| "movl 4(%0) , %%eax;"                            |
+| "movl %%eax , (%1);"                             |
+| "movl (%0) , %%eax;"                             |
+| "movl %%eax , 4(%1);"                            |
+| :                                                |
+| : "r"(input0),"r"(target0)                       |
+| : "%eax", "%ebx", "%ecx", "%edx"                |
+| );                                               |
+| }                                                |
+| ```                                               | "Swap2Elements"       | 47 seconds         |
 
 
 

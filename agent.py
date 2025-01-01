@@ -61,14 +61,13 @@ class Agent:
                         if self.game.is_terminal(end_node):
                             #We have to simulate the reward in this case as the reward we have was
                             #simply an estimation by the value network
-                            temp_node = Node(self.game.initialize_state(), None, None)
-                            actions = game["game"]
-                            for action in actions:
-                                temp_node = Node(self.game.apply_action(node.state, action["action"]), temp_node, action=action["action"])
-                            reward = self.game.get_reward(temp_node)
+                            actions = [v["action"] for v in game["game"]]
+                            reward = self.game.get_reward(actions)
+                            game = {"game": game["game"], "reward": reward}
+                            batch.append(game)  
 
-                            batch.append({"game": actions, "reward": reward})  
-                    if reward >= self.highest_reward:
+                    #Check for terminal game to prevent weird situations while using pol-val
+                    if reward >= self.highest_reward and self.game.is_terminal(end_node):
                         current_best_game = game
                         self.highest_reward = reward
                 node = self.mcts.select_best_action(node)

@@ -349,24 +349,27 @@ class AssemblyGame(Game):
         input_args = ["int* input" + str(k) for k in range(self.nrof_inputs)]
         target_args = ["int* target" + str(k) for k in range(self.nrof_targets)]
         args = ",".join(input_args + target_args)
+        empty_program = len(actions)==1 and self.assembly.encode(actions[0]) == self.assembly.vocab_size - 1
         with open(filename, "w") as f:   
             f.write("void " + self.algo_name + "(" + args + "){ \n")
-            if len(actions) > 1:
+            if not empty_program:
                 f.write("__asm__ ( \n")
-            for line in actions:
-                # print(, "   ", line, "   ", self.assembly.vocab_size)
-                #Check for END
-                if self.assembly.encode(line) == self.assembly.vocab_size - 1:
-                    break
-                f.write("\"" + line + ";\" \n")
-            if len(actions) > 1:
+
+                for line in actions:
+                    # print(, "   ", line, "   ", self.assembly.vocab_size)
+                    #Check for END
+                    if self.assembly.encode(line) == self.assembly.vocab_size - 1:
+                        break
+                    f.write("\"" + line + ";\" \n")
+                
+                #Write registers
                 f.write(": \n")
                 f.write(": \"r\"(" + args.replace("int* ", "").replace(",", "),\"r\"(") + ")\n ")
-                f.write(": \"%eax\", \"%ebx\", \"%ecx\", \"%edx\" \n")
+                formatted_registers = ': ' + ', '.join([f'"{reg.replace("%%", "%")}"' for reg in self.assembly.registers]) + '\n'
+                f.write(formatted_registers)
                 f.write("); \n")
+
             f.write("} \n")
-
-
             if len(meta_info) > 0:
                 f.write("//META INFO \n")            
             for line in meta_info:

@@ -337,7 +337,7 @@ class DotProduct2x1(AssemblyGame):
     
     def init_vocab(self):
         #We need 4 registers
-        self.assembly.registers = ["%%eax", "%%ebx", "%%ecx", "%%edx"]
+        self.assembly.registers = ["%%eax", "%%ebx", "%%ecx"]
 
         #Memory addresers for input0, input1 and target. All being 2x2 matricies.
         self.assembly.target_mem_locs = ["(%2)"]

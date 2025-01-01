@@ -138,13 +138,13 @@ def test_dot_product():
     game = DotProduct2x1(32, 32)
     instructions = [
                 "movl (%0) %%eax",   
-                "movl 4(%0) %%ebx",  
                 "movl (%1) %%ecx",    
-                "movl 4(%1) %%edx",
                 "imull %%eax %%ecx",
-                "imull %%ebx %%edx",
-                "add %%ecx %%edx",
-                "movl %%edx (%2)",
+                "movl 4(%0) %%ebx",  
+                "movl 4(%1) %%eax",
+                "imull %%ebx %%eax",
+                "add %%ecx %%eax",
+                "movl %%eax (%2)",
                 "END"
                 ]
     node = Node(state=game.initialize_state(), parent=None)
@@ -308,4 +308,4 @@ def peachpy_matmul():
     print(C)
 
 if __name__ == "__main__":
-    train_on_toy_game()
+    train_on_swap_2_elements()

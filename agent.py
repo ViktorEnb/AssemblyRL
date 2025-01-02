@@ -66,6 +66,8 @@ class Agent:
                             game = {"game": game["game"], "reward": reward}
                             batch.append(game)  
 
+                    if reward > self.highest_reward:
+                        print("Got new best reward: ", reward)
                     #Check for terminal game to prevent weird situations while using pol-val
                     if reward >= self.highest_reward and self.game.is_terminal(end_node):
                         current_best_game = game
@@ -81,10 +83,12 @@ class Agent:
                 batches = [batch[i:i + self.batch_size] for i in range(0, len(batch), self.batch_size)]
                 for m_batch in batches:
                     self.update_networks(m_batch)
-            # if self.save:
-            #     self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
             
-            # Saves the best assembly game to file
+            #Saves the weights of the networks to file         
+            if self.save:
+                self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
+            
+            #Saves the best assembly game to file
             if isinstance(self.game,AssemblyGame):
                 self.save_game(current_best_game, i)      
             
@@ -213,20 +217,26 @@ class Agent:
         self.game.write_game(decoded_actions, filename=filename, meta_info = ["Reward: " + str(self.highest_reward), "Iteration: " + str(iteration), "Time since start: " + str(total_time) + " seconds", "Percentage of time updating networks: " + str(perc_training) + "%"])
 
     def save_models(self, save_path):
-        torch.save({
-            'policy_network_state_dict': self.policy_network.state_dict(),
-            'policy_optimizer_state_dict': self.policy_optimizer.state_dict(),
-            'value_network_state_dict': self.value_network.state_dict(),
-            'value_optimizer_state_dict': self.value_optimizer.state_dict(),
-        }, save_path)
+        if self.policy_network != None:
+            torch.save({
+                'policy_network_state_dict': self.policy_network.state_dict(),
+                'policy_optimizer_state_dict': self.policy_optimizer.state_dict(),
+            }, save_path)
+        if self.policy_value != None:
+            torch.save({
+                'value_network_state_dict': self.policy_value.state_dict(),
+                'value_optimizer_state_dict': self.policy_value_optimizer.state_dict(),
+            }, save_path)
         print(f"Models saved to {save_path}")
 
     def load_models(self, load_path):
         checkpoint = torch.load(load_path)
-        self.policy_network.load_state_dict(checkpoint['policy_network_state_dict'])
-        self.policy_optimizer.load_state_dict(checkpoint['policy_optimizer_state_dict'])
-        self.value_network.load_state_dict(checkpoint['value_network_state_dict'])
-        self.value_optimizer.load_state_dict(checkpoint['value_optimizer_state_dict'])
+        if self.policy_network != None:
+            self.policy_network.load_state_dict(checkpoint['policy_network_state_dict'])
+            self.policy_optimizer.load_state_dict(checkpoint['policy_optimizer_state_dict'])
+        if self.policy_value != None:
+            self.policy_value.load_state_dict(checkpoint['value_network_state_dict'])
+            self.policy_value_optimizer.load_state_dict(checkpoint['value_optimizer_state_dict'])
         print(f"Models loaded from {load_path}")
 
 

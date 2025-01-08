@@ -70,45 +70,88 @@ While testing out and tweaking the algorithm, adjusting parameters and so on, I 
 - **"DotProduct2x1"** This is the target algorithm we're actually interested in, given two arrays with 2 elements each, compute the dot product and save it to a new memory address
 
 
-| Algorithm   | Code                                     | Time to discover                           |
-| ----------- | ---------------------------------------- | ------------------------------------------ |
-| Linux / BSD | ```void supersimple(int* input0, int* target) {
-                    __asm__ (
-                        "movl (%0) , %%eax;"
-                }```                        
-                                                         | `/home/alice/.local/share`                 |
-| macOS       | `$HOME/Library/Application Support`      | `/Users/Alice/Library/Application Support` |
-| Windows     | `%LOCALAPPDATA%`                         | `C:\Users\Alice\AppData\Local`             |
-
-  
-
-| Algorithm                                         | Name of Algorithm     | Time to Discover |
-|---------------------------------------------------|------------------------|-------------------|
-| ```c                                             |
-| void supersimple(int* input0,int* target0){ \n   |
-| __asm__ ( \n                                     |
-| "movl (%0) , %%eax;"    \n                       |
-| "movl %%eax , (%1);"    <br>                     |
-| :                                                |
-| : "r"(input0),"r"(target0)                       |
-| : "%eax", "%ebx", "%ecx", "%edx"                 |
-| );                                               |
-| }                                                |
-| ```                                              | "SimplestAssemblyGame"      | < 1 second        |
-| ```c                                             |
-| void swap2elements(int* input0,int* target0){    |
-| __asm__ (                                        |
-| "movl 4(%0) , %%eax;"                            |
-| "movl %%eax , (%1);"                             |
-| "movl (%0) , %%eax;"                             |
-| "movl %%eax , 4(%1);"                            |
-| :                                                |
-| : "r"(input0),"r"(target0)                       |
-| : "%eax", "%ebx", "%ecx", "%edx"                |
-| );                                               |
-| }                                                |
-| ```                                               | "Swap2Elements"       | 47 seconds         |
-
-
-
+<table style="background: none;">
+  <thead>
+    <tr>
+      <th>Algorithm Name</th>
+      <th>Algorithm Code</th>
+      <th>Discovery Time</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>SimpleAssemblyGame</td>
+      <td>
+        <pre>
+void supersimple(int* input0,int* target0){ 
+    __asm__ ( 
+        "movl (%0) , %%eax;" 
+        "movl %%eax , (%1);" 
+        : 
+        : "r"(input0),"r"(target0)
+        : "%eax"
+    ); 
+}
+        </pre>
+      </td>
+      <td>< 1 second</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Swap2Elements</td>
+      <td>
+        <pre>
+void swap2elements(int* input0,int* target0){ 
+    __asm__ ( 
+        "movl 4(%0) , %%eax;" 
+        "movl %%eax , (%1);" 
+        "movl (%0) , %%ebx;" 
+        "movl %%ebx , 4(%1);" 
+        : 
+        : "r"(input0),"r"(target0)
+        : "%eax", "%ebx"
+    ); 
+}
+        </pre>
+      </td>
+      <td>< 43 seconds</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>DotProduct2x1</td>
+      <td>
+        <pre>
+void dotproduct(int* input0,int* input1,int* target0){ 
+    __asm__ ( 
+        "movl (%1) , %%eax;" 
+        "movl %%eax , %%ebx;" 
+        "movl (%0) , %%ebx;" 
+        "imull %%eax , %%ebx;" 
+        "movl (%0) , %%eax;" 
+        "movl %%ebx , (%2);" 
+        "imull %%eax , %%ebx;" 
+        "movl (%0) , %%eax;" 
+        "movl (%1) , %%eax;" 
+        "movl %%eax , %%ebx;" 
+        "movl 4(%0) , %%ebx;" 
+        "movl (%1) , %%ebx;" 
+        : 
+        : "r"(input0),"r"(input1),"r"(target0)
+        : "%eax", "%ebx", "%ecx"
+    ); 
+}
+        </pre>
+      </td>
+      <td>-</td>
+    </tr>
+  </tbody>
+</table>
 

@@ -24,6 +24,9 @@ class Game:
 
     def apply_action(self, state, action):
         raise NotImplementedError
+    def present_action(self, action):
+        #Will be overwritten in assemblygame
+        return action
 
 
 class ToyGameWithReprNetwork(Game):

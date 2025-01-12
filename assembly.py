@@ -432,3 +432,5 @@ class AssemblyGame(Game):
             f.write("#include \"" + self.algo_name + ".h\" \n")
             f.write("void " + self.algo_name + "(" + args + "); \n")
             f.write("#endif")
+    def present_action(self, action):
+        return self.assembly.decode(action)

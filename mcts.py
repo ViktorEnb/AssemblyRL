@@ -6,6 +6,7 @@ import numpy as np
 import random 
 import time
 import yaml
+from mctsplotter import MCTSPlotter
 
 with open('config.yaml', 'r') as f:
     params = yaml.safe_load(f)
@@ -14,12 +15,14 @@ class MCTS:
     def __init__(self, game):
         self.game = game
         self.root = Node(state=self.game.initialize_state(), parent=None)
+        self.plotter = MCTSPlotter(self.root, game)
     def rollout(self, node, policy_network = None, policy_and_value = None):
         #Performs a rollout either with a policy netowrk or with a policy combined with value network
         #Exactly one of the policy_network, policy_and_value network has to not be None
         # 1. Selection with UCB
         while node.is_expanded and not self.game.is_terminal(node):
             network = policy_network if policy_network != None else policy_and_value
+            self.plotter.network = network #For plotting uct values
             node = self.select(node, network)
         reward = 0        
         # 2. Simulating a reward
@@ -47,6 +50,9 @@ class MCTS:
         # 4. Backpropagation
         self.backpropagate(node, reward)
 
+        #Transfer changes to plotter
+        self.plotter.root = self.root
+
         return node, reward
 
     def select(self, node, policy_network):
@@ -71,7 +77,10 @@ class MCTS:
             visit_count = child.visit_count
             P_s_a = policy_network(node.state)[action]
 
-            uct_value = (total_reward / (visit_count + 1e-6)) + D * P_s_a + C * np.sqrt(np.log(node.visit_count + 1) / (visit_count + 1e-6))
+            reward_term = (total_reward / (visit_count + 1e-6)) 
+            exploration_term = C * np.sqrt(np.log(node.visit_count + 1) / (visit_count + 1e-6))
+            network_term = D * P_s_a #Not used at the moment 
+            uct_value = reward_term + exploration_term
 
             # if node == self.root:
             #     print(f"Action: {action.item()}: {self.game.assembly.decode(action)}")
@@ -135,3 +144,7 @@ class MCTS:
 
     def reset(self):
         self.root = Node(state=self.game.initialize_state(), parent=None)
+        self.plotter.reset(self.root)
+
+
+

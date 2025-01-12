@@ -270,9 +270,13 @@ class DotProduct2x1(AssemblyGame):
         #Has to be modified based on the target algorithm
         self.test_cases = []
         self.targets = []
-        for _ in range(5):
-            test_case1 = torch.randint(0,20,(2,))
-            test_case2 = torch.randint(0,20,(2,))
+        for i in range(6):
+            test_case1 = torch.randint(1,20,(2,))
+            test_case2 = torch.randint(1,20,(2,))
+            if i <= 1:
+                test_case1[0] = 0
+            elif i <= 3:
+                test_case1[1] = 0
             self.test_cases.append([test_case1, test_case2])
             target = torch.dot(test_case1, test_case2)
             self.targets.append([target])
@@ -356,7 +360,7 @@ class DotProduct2x1(AssemblyGame):
 
         self.set_illegal_moves()
         
-        self.max_lines = 15
+        self.max_lines = 10
         self.min_lines = 9
 
 

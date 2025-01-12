@@ -49,7 +49,7 @@ class Agent:
             self.mcts.reset()
             batch = []
             node = self.mcts.root
-
+            
             while not self.game.is_terminal(node):
                 for j in range(params["num_iterations"]):
                     # (One of policy_network, policy_and_value will be none)
@@ -72,6 +72,8 @@ class Agent:
                     if reward >= self.highest_reward and self.game.is_terminal(end_node):
                         current_best_game = game
                         self.highest_reward = reward
+
+                self.mcts.plotter.current_level += 1
                 node = self.mcts.select_best_action(node)
 
             

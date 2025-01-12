@@ -21,3 +21,9 @@ class Node:
             node = node.parent
         actions.reverse()
         return actions
+    def unique_id(self):
+        if self.parent == None:
+            #It's the root
+            return "0"
+        id = self.parent.unique_id() + ":" + str(self.action)
+        return id

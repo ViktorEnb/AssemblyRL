@@ -68,6 +68,7 @@ def train_on_swap_2_elements():
     hidden_size = 32
     game = Swap2Elements(repr_size, hidden_size)
     agent = Agent(game, repr_size, hidden_size, game.get_num_actions(), load=False)
+    time.sleep(5)
     agent.train(num_iterations=300)  
     agent.play_game()
 
@@ -193,7 +194,13 @@ def test_load():
     loaded_agent = Agent(new_game, repr_size, hidden_size, new_game.get_num_actions(), load=True, save=False)
     loaded_agent.play_game()  
 
-
+def test_plotter():
+    game = ToyGameWithReprNetwork()
+    repr_size = len(game.tree.keys())
+    num_actions = game.width
+    agent = Agent(game, repr_size, repr_size, num_actions)
+    time.sleep(5)
+    agent.train(num_iterations=1)
 
 def peachpy_matmul():
     a = Argument(ptr(const_int32_t))  # pointer to matrix A

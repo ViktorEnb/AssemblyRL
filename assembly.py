@@ -191,7 +191,6 @@ class AssemblyGame(Game):
     def get_nrof_passed_test_cases(self, stdout):
         #Compares the stdout from the program which was run to the target
         #Returns the total number of test cases which passed
-        
         element_counter = 0
         passed_element_counter = 0
         passed_tests = 0
@@ -211,12 +210,8 @@ class AssemblyGame(Game):
             if passed:
                 passed_tests += 1
 
-        if passed_tests == len(self.targets):
-            #perfect score
-            return 100
-        else:
-            #Passing a test case should be more important than passing lots of elements without passing cases
-            return passed_tests * 70.0 / len(self.targets) + passed_element_counter * 30.0 / element_counter
+        #Passing a test case should be more important than passing lots of elements without passing cases
+        return passed_tests * 70.0 / len(self.targets) + passed_element_counter * 30.0 / element_counter
     
     #Runs the assembly program and calculates reward based on 
     #correctness and time of execution

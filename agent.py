@@ -48,7 +48,7 @@ class Agent:
             print(i, "th iteration")
             batch = []
             node = self.mcts.root
-            
+            found_new_best = False
             while not self.game.is_terminal(node):
                 for j in range(params["num_iterations"]):
                     # (One of policy_network, policy_and_value will be none)
@@ -66,6 +66,7 @@ class Agent:
                             batch.append(game)  
 
                     if reward > self.highest_reward:
+                        found_new_best = True
                         print("Got new best reward: ", reward)
                     #Check for terminal game to prevent weird situations while using pol-val
                     if reward >= self.highest_reward and self.game.is_terminal(end_node):
@@ -86,7 +87,7 @@ class Agent:
                     self.update_networks(m_batch)
             
             #Saves the weights of the networks to file         
-            if self.save:
+            if self.save and found_new_best:
                 self.save_models(os.path.join(".", "saved_models", self.game.algo_name))
             
             #Saves the best assembly game to file

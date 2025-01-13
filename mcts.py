@@ -16,15 +16,16 @@ class MCTS:
         self.game = game
         self.root = Node(state=self.game.initialize_state(), parent=None)
         self.plotter = MCTSPlotter(self.root, game)
+        self.plotter.root = self.root
     def rollout(self, node, policy_network = None, policy_and_value = None):
         #Performs a rollout either with a policy netowrk or with a policy combined with value network
         #Exactly one of the policy_network, policy_and_value network has to not be None
         # 1. Selection with UCB
         while node.is_expanded and not self.game.is_terminal(node):
             network = policy_network if policy_network != None else policy_and_value
-            self.plotter.network = network #For plotting uct values
             node = self.select(node, network)
-        reward = 0        
+        reward = 0
+
         # 2. Simulating a reward
         if policy_and_value == None:
             while not self.game.is_terminal(node):
@@ -61,11 +62,9 @@ class MCTS:
         best_value = -float('inf')
         best_nodes = []
         uct_values = []
-        for action in self.game.get_actions():
-            if self.game.get_legal_moves(node)[action] == 0:
-                #skip illegal moves
-                continue
+        legal_moves = [torch.tensor(action) for action, value in enumerate(self.game.get_legal_moves(node)) if value.item() == 1]
 
+        for action in legal_moves:
             #check if the action already has an associated child node
             if action.item() not in node.children:
                 child = Node(state=None, parent=node, action=action.item())

@@ -7,7 +7,10 @@ from game import Game
 import threading 
 import numpy as np
 import yaml
-
+import time
+import psutil
+import os
+import re 
 
 with open('config.yaml', 'r') as f:
     params = yaml.safe_load(f)
@@ -32,7 +35,12 @@ class MCTSPlotter:
             dcc.Graph(id='live-graph'),
             dcc.Interval(id='interval-component', interval=500, n_intervals=0)  #Update every 500 ms
         ])
+        self.lock = threading.Lock()  #For managing thread-safe updates
+        threading.Thread(target=self.background_update_graph_data, daemon=True).start()
         self._setup_callbacks()
+
+
+
 
 
     def calculate_xpos(self, id : str, level : int):
@@ -43,9 +51,27 @@ class MCTSPlotter:
         return sum(other_actions < actions for other_actions in self.nodes_at_level[level] + [[-float("inf")], [float("inf")]]) * 1.0 / (len(self.nodes_at_level[level]) + 1)
     
 
+    def calculate_selected_nodes(self):
+        node = self.root
+        self.selected_nodes = [node.unique_id()] #First node is the root
+
+        level = 0
+        while level <= self.current_level and len(node.children) > 0:
+            max_visit_count = 0
+            best_node = None
+            for child in node.children.values():
+                if child.visit_count > max_visit_count:
+                    max_visit_count = child.visit_count
+                    best_node = child
+            self.selected_nodes.append(best_node.unique_id())
+            node = best_node
+            level += 1
+
     def add_new_nodes(self, level, node):
         if level > self.current_level:
             return
+        if node.unique_id() not in self.selected_nodes: #we will not plot children of non-selected nodes (would be too much)
+            return 
         
         for child in node.children.values():
             id = child.unique_id()
@@ -61,6 +87,17 @@ class MCTSPlotter:
                     self.G.add_edge(child.parent.unique_id(), child.unique_id())
             self.add_new_nodes(level + 1, child)
 
+    def background_update_graph_data(self):
+        while True:
+            with self.lock:
+                self.G.clear()
+                self.nodes_at_level.clear()
+                self.nodes_at_level[0] = [[0]]
+                self.G.add_node(self.root.unique_id(), reward = self.root.total_reward, visit_count = self.root.visit_count, action = 1, level=0)
+                self.calculate_selected_nodes()
+                self.add_new_nodes(0, self.root)
+            time.sleep(0.5)
+
     def _setup_callbacks(self):
         """Set up the callback for live updates."""
         @self.app.callback(
@@ -68,49 +105,15 @@ class MCTSPlotter:
             Input('interval-component', 'n_intervals')
         )
         def update_graph(n_intervals):
-            #Recreate everything from scratch to make sure we get new rewards/visit_counts
-            self.G.clear()
-            self.nodes_at_level.clear()
-            self.nodes_at_level[0] = [[0]]
-            self.G.add_node(self.root.unique_id(), reward = self.root.total_reward, visit_count = self.root.visit_count, action = 1, level=0)
-            self.add_new_nodes(0, self.root)
-            return self.generate_figure()
+            with self.lock:
+                return self.generate_figure()
 
-        thread = threading.Thread(target=self.run_server_in_thread)
-        thread.daemon = True
-        thread.start()
+        threading.Thread(target=self.run_server_in_thread, daemon=True).start()
 
     def run_server_in_thread(self):
         self.app.run_server(debug=False, use_reloader=False)
-
     def generate_figure(self):
         """Generate the current state of the graph as a Plotly figure."""
-
-        #Find all nodes with the most visits in order make them green and to not draw unnecessary nodes
-        selected_nodes = {}
-        for node in self.G.nodes:
-            level = self.G.nodes[node]['level']
-            if level not in selected_nodes or self.G.nodes[node]['visit_count'] > self.G.nodes[selected_nodes[level]]['visit_count']:
-                selected_nodes[level] = node
-        
-        nodes_to_remove = []
-        for node in self.G.nodes():
-            level = self.G.nodes[node]['level']
-            parent_node = next((edge[0] for edge in self.G.edges() if edge[1] == node), None)
-
-            # Check if the parent is not the most visited in this level
-            if parent_node:
-                if parent_node not in selected_nodes.values():
-                    nodes_to_remove.append(node)
-                    #Remove from nodes_at_level list as well
-                    for level in range(0, self.current_level + 2):
-                        try:
-                            self.nodes_at_level[level].remove([int(action) for action in node.split(":")])
-                        except:
-                            pass
-        
-        self.G.remove_nodes_from(nodes_to_remove)
-
         pos_dict = {
             node: {
                 "x": self.calculate_xpos(node, self.G.nodes[node]['level']),
@@ -121,14 +124,14 @@ class MCTSPlotter:
 
         # Determine node colors
         node_colors = [
-            'green' if node in selected_nodes.values() else 'lightblue' 
+            'green' if node in self.selected_nodes else 'lightblue' 
             for node in self.G.nodes()
         ]
 
         #sizes = [(self.G.nodes[node]['reward'] + 1) * 20 for node in self.G.nodes()]
         sizes = [20 for node in self.G.nodes()]
-        hover_texts = [
-            f"""
+        hover_texts = {
+            node : f"""
             {self.game.present_action(self.G.nodes[node]['action'])}<br>
             Reward: {self.G.nodes[node]['reward'] / self.G.nodes[node]['visit_count'] if self.G.nodes[node]['visit_count'] != 0 else 0}<br>
             Visit count: {self.G.nodes[node]['visit_count']}<br>
@@ -138,7 +141,7 @@ class MCTSPlotter:
             """ 
             for node in self.G.nodes()
             for reward_term, exploration_term, uct_value in [self.get_uct_terms(self.G.nodes[node]['reward'], self.G.nodes[node]['visit_count'])]
-        ]
+        }
 
         fig = go.Figure()
         
@@ -154,9 +157,25 @@ class MCTSPlotter:
                     hoverinfo='none'
                 )
             )
+        #Make the hover-text always visible for selected_nodes
+        for id in self.selected_nodes:
+            parent_id = next((edge[0] for edge in self.G.edges() if edge[1] == id), None)
+            if parent_id:
+                x, y = pos_dict[parent_id]["x"], pos_dict[parent_id]["y"]
+                fig.add_annotation(
+                    x=-0.01, 
+                    y=y,
+                    text=re.sub(r'\d+\.\d+', lambda match: f"{float(match.group()):.2f}", hover_texts[parent_id]),
+                    showarrow=False,
+                    bgcolor="lightblue",
+                    bordercolor="darkblue",
+                    font=dict(color="black"),
+                    align="right",
+                    xanchor="right",
+                    borderwidth=0.02,
+                )
         x_coords = [pos["x"] for pos in pos_dict.values()]
         y_coords = [pos["y"] for pos in pos_dict.values()]
-
         # Add nodes
         fig.add_trace(
             go.Scatter(
@@ -169,7 +188,7 @@ class MCTSPlotter:
                 ),
                 text=[str(self.G.nodes[node]['action']) for node in self.G.nodes()],
                 textposition='top center',
-                hovertext=hover_texts,
+                hovertext=list(hover_texts.values()),
                 hoverinfo='text'
             )
         )
@@ -179,11 +198,11 @@ class MCTSPlotter:
             height=(self.current_level + 2) * 200,
             title="MCTS Reward Plotter",
             showlegend=False,
-            xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-0.1, 1.1]),
+            xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-0.15, 1]),
             yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-0.1, 1.1]),
             margin=dict(l=20, r=20, t=40, b=20)
         )
-        
+        print("Finished running")
         return fig
 
     def get_uct_terms(self, reward, visit_count):

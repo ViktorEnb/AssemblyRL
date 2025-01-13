@@ -46,7 +46,6 @@ class Agent:
         self.time_started = datetime.now()
         for i in range(num_iterations):
             print(i, "th iteration")
-            self.mcts.reset()
             batch = []
             node = self.mcts.root
             
@@ -93,6 +92,8 @@ class Agent:
             #Saves the best assembly game to file
             if isinstance(self.game,AssemblyGame):
                 self.save_game(current_best_game, i)      
+            self.mcts.reset()
+
             
 
     def sort_and_train(self, games):

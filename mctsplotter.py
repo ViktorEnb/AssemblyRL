@@ -112,7 +112,7 @@ class MCTSPlotter:
         threading.Thread(target=self.run_server_in_thread, daemon=True).start()
 
     def run_server_in_thread(self):
-        self.app.run_server(debug=False, use_reloader=False)
+        self.app.run_server(debug=False, use_reloader=False, dev_tools_silence_routes_logging=True)
     def generate_figure(self):
         """Generate the current state of the graph as a Plotly figure."""
         pos_dict = {
@@ -145,10 +145,11 @@ class MCTSPlotter:
             for reward_term, exploration_term, uct_value in [self.get_uct_terms(self.G.nodes[node]['reward'], self.G.nodes[node]['visit_count'])]
             if node != self.root.unique_id() #skip root
         }
-        hover_texts[self.root.unique_id()] =  f"""
-                                                Root <br>
-                                                Visit count: {self.G.nodes[self.root.unique_id()]['visit_count']} <br>
-                                                """
+        hover_texts[self.root.unique_id()] =  \
+        f"""
+        Root <br>
+        Visit count: {self.G.nodes[self.root.unique_id()]['visit_count']} <br>
+        """
 
         fig = go.Figure()
         

@@ -17,9 +17,14 @@ class MCTS:
         self.root = Node(state=self.game.initialize_state(), parent=None)
         self.plotter = MCTSPlotter(self.root, game)
         self.plotter.root = self.root
+        self.network_values = {}
+        self.exp_factor = params["mcts_exploration"]  #exploration parameter
+        self.net_factor = params["mcts_network"] #policy network bias parameter
+
     def rollout(self, node, policy_network = None, policy_and_value = None):
         #Performs a rollout either with a policy netowrk or with a policy combined with value network
         #Exactly one of the policy_network, policy_and_value network has to not be None
+
         # 1. Selection with UCB
         while node.is_expanded and not self.game.is_terminal(node):
             network = policy_network if policy_network != None else policy_and_value
@@ -38,9 +43,15 @@ class MCTS:
                 # action = np.random.choice(self.game.get_actions())
                 # while self.game.get_legal_moves(node)[action] == 0:
                 action = np.random.choice(self.game.get_actions(), p=action_probs)    
+
                 if action not in node.children:
                     child_node = Node(state=None, parent=node, action = action)
                     node.add_child(action, child_node)
+                    #We may need the network term for plotting
+                    network_term = self.net_factor * action_probs[action]
+                    self.network_values[child_node.unique_id()] = network_term
+                    self.plotter.add_network_value(child_node.unique_id(), network_term)
+
                 node = node.children[action]
             reward = self.game.get_reward(node)
 
@@ -57,12 +68,16 @@ class MCTS:
         return node, reward
 
     def select(self, node, policy_network):
-        C = params["mcts_exploration"]  #exploration parameter
-        D = params["mcts_network"] #policy network bias parameter
         best_value = -float('inf')
         best_nodes = []
         uct_values = []
         legal_moves = [torch.tensor(action) for action, value in enumerate(self.game.get_legal_moves(node)) if value.item() == 1]
+
+        logits = policy_network(node.state)
+        action_probs = nn.functional.softmax(logits, dim=-1).to("cpu")
+        #Remove illegal moves
+        action_probs = torch.mul(action_probs, self.game.get_legal_moves(node)).detach().numpy()
+        action_probs = 1.0 / sum(action_probs) * action_probs
 
         for action in legal_moves:
             #check if the action already has an associated child node
@@ -74,12 +89,16 @@ class MCTS:
 
             total_reward = child.total_reward / 200 #Since our max reward is 200 we have to scale it to make it fair for exploration value
             visit_count = child.visit_count
-            P_s_a = policy_network(node.state)[action]
+            P_s_a = self.net_factor * action_probs[action]
 
             reward_term = (total_reward / (visit_count + 1e-6)) 
-            exploration_term = C * np.sqrt(np.log(node.visit_count + 1) / (visit_count + 1e-6))
-            network_term = D * P_s_a #Not used at the moment 
-            uct_value = reward_term + exploration_term
+            exploration_term = self.exp_factor * np.sqrt(np.log(node.visit_count + 1) / (visit_count + 1e-6))
+            id = child.unique_id()
+            if id not in self.network_values:
+                network_term = self.net_factor * P_s_a.item()
+                self.network_values[id] = network_term
+                self.plotter.add_network_value(id, network_term)
+            uct_value = reward_term + exploration_term + self.network_values[id]
 
             # if node == self.root:
             #     print(f"Action: {action.item()}: {self.game.assembly.decode(action)}")
@@ -144,6 +163,7 @@ class MCTS:
     def reset(self):
         self.root = Node(state=self.game.initialize_state(), parent=None)
         self.plotter.reset(self.root)
+        self.network_values = {} #have to reset network_values as network will be trained inbetween iterations
 
 
 

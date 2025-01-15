@@ -38,6 +38,7 @@ class MCTSPlotter:
         self.lock = threading.Lock()  #For managing thread-safe updates
         threading.Thread(target=self.background_update_graph_data, daemon=True).start()
         self._setup_callbacks()
+        self.network_values = {} #Keys are level -> node_id
 
 
 
@@ -138,10 +139,16 @@ class MCTSPlotter:
             Reward term: {reward_term}<br>
             Exploration term: {exploration_term} <br>
             Total UCT value: {uct_value} <br> 
+            Network term: {self.network_values[self.G.nodes[node]['level']][node]} <br>
             """ 
             for node in self.G.nodes()
             for reward_term, exploration_term, uct_value in [self.get_uct_terms(self.G.nodes[node]['reward'], self.G.nodes[node]['visit_count'])]
+            if node != self.root.unique_id() #skip root
         }
+        hover_texts[self.root.unique_id()] =  f"""
+                                                Root <br>
+                                                Visit count: {self.G.nodes[self.root.unique_id()]['visit_count']} <br>
+                                                """
 
         fig = go.Figure()
         
@@ -174,8 +181,9 @@ class MCTSPlotter:
                     xanchor="right",
                     borderwidth=0.02,
                 )
-        x_coords = [pos["x"] for pos in pos_dict.values()]
-        y_coords = [pos["y"] for pos in pos_dict.values()]
+        x_coords = [pos_dict[node]["x"] for node in pos_dict.keys()]
+        y_coords = [pos_dict[node]["y"] for node in pos_dict.keys()]
+        texts = [hover_texts[node] for node in pos_dict.keys()]
         # Add nodes
         fig.add_trace(
             go.Scatter(
@@ -188,7 +196,7 @@ class MCTSPlotter:
                 ),
                 text=[str(self.G.nodes[node]['action']) for node in self.G.nodes()],
                 textposition='top center',
-                hovertext=list(hover_texts.values()),
+                hovertext=texts,
                 hoverinfo='text'
             )
         )
@@ -202,7 +210,6 @@ class MCTSPlotter:
             yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-0.1, 1.1]),
             margin=dict(l=20, r=20, t=40, b=20)
         )
-        print("Finished running")
         return fig
 
     def get_uct_terms(self, reward, visit_count):
@@ -219,6 +226,11 @@ class MCTSPlotter:
         #     network_term = D * self.network(state)[action]
 
         return reward_term, exploration_term, uct_value
+    def add_network_value(self, id, value):
+        level = id.count(":")
+        if level not in self.network_values:
+            self.network_values[level] = {}
+        self.network_values[level][id] = value
     def reset(self, root):
         self.root = root
         self.nodes = {}

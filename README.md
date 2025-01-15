@@ -6,7 +6,11 @@ Before delving into the details, let's describe the basic aim for this project a
 
 # MCTS algorithm
 
-The MCTS algorithm is used for traversing through a general tree where each leaf node is associated with a number, and maximizing the .
+The MCTS algorithm is used for traversing through a general tree where each leaf node is associated with a reward, maximizing the  end-node reward. This framework fits our problem nicely, each node will represent a certain state of the assembly program and selecting a child of that node will represent adding a certain line of assembly to the end of the program; the root of the tree will represent an empty program. The basic principle in MCTS is to iteratively select nodes based on exploitation (nodes which give high reward) and exploration (nodes which haven't been visited much). The MCTS algorithm is computed by performing the 3 steps below iteratively until a high enough reward has been achieved or for a fixed number of iterations.
+
+ 1. Selection: Start from the root node, and select the child with the highest UCT value. The UCT value of a node is calculated with the formula $`\frac{R}{N} + c \cdot \sqrt {\frac{\text{ln} N}{N}}`$, N is the number of times the node has been visited before (visit count), where R is the average reward achieved in previous iterations and c is a parameter which is decided based on the nature of the tree. Note that the higher average reward a node has and the less it's been visited the more likely it is of being selected. Each time a node is visited increment its' visit count and continue until an unvisited node has been reached. 
+ 2. Simulating a reward: When arriving at an unvisited node with $`N = 0`$, randomly traverse the rest of the tree until reaching a leaf node. 
+ 3. Backpropagating the reward up the tree: After having reached a leaf node and having received a reward, update the average reward of all nodes which have been traversed.
 
 # Utilizing a neural network for better MCTS 
 

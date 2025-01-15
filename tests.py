@@ -22,7 +22,7 @@ def train_on_toy_game():
     repr_size = len(game.tree.keys())
     num_actions = game.width
     agent = Agent(game, repr_size, repr_size, num_actions)
-    agent.train(num_iterations=200)
+    agent.train()
     print("\n\n\n")
     # agent.print_network_predictions()
     agent.play_game()
@@ -36,7 +36,7 @@ def train_on_simple_assembly_game():
     hidden_size = 12
     game = SimplestAssemblyGame(repr_size, hidden_size)
     agent = Agent(game, repr_size, hidden_size, game.get_num_actions(), load=False)
-    agent.train(num_iterations=300)  
+    agent.train()  
     agent.play_game()
 
 def test_legal_moves():
@@ -69,7 +69,7 @@ def train_on_swap_2_elements():
     game = Swap2Elements(repr_size, hidden_size)
     agent = Agent(game, repr_size, hidden_size, game.get_num_actions(), load=False)
     time.sleep(5)
-    agent.train(num_iterations=300)  
+    agent.train()  
     agent.play_game()
 
 def train_on_multiplication_with_headstart():
@@ -80,7 +80,7 @@ def train_on_multiplication_with_headstart():
     root2 = Node(state=game.apply_action(root1.state, game.assembly.encode("movl (%1) %%ebx")), action=game.assembly.encode("movl (%1) %%ebx"),parent=root1)
     root3 = Node(state=game.apply_action(root2.state, game.assembly.encode("imull %%ebx %%eax")), action=game.assembly.encode("imull %%ebx %%eax"),parent=root2)
     agent.mcts.root = root3
-    agent.train(num_iterations=1)
+    agent.train()
 def test_swap_2_elements():
     #Tests that basic assembly for swapping two numbers get 100% pass rate
     game = Swap2Elements(32, 32)
@@ -187,7 +187,7 @@ def test_load():
 
     game = Swap2Elements(repr_size, hidden_size)
     agent = Agent(game, repr_size, hidden_size, game.get_num_actions(), load=False, save=True)
-    agent.train(num_iterations=1)  
+    agent.train()  
     agent.play_game()
 
     new_game = Swap2Elements(repr_size, hidden_size)
@@ -200,7 +200,7 @@ def test_plotter():
     num_actions = game.width
     agent = Agent(game, repr_size, repr_size, num_actions)
     time.sleep(5)
-    agent.train(num_iterations=1)
+    agent.train()
 
 def peachpy_matmul():
     a = Argument(ptr(const_int32_t))  # pointer to matrix A

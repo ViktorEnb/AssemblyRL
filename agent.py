@@ -41,16 +41,16 @@ class Agent:
         self.training_time = 0 #Time spent training networks
         self.action_dict = {}
 
-    def train(self, num_iterations):
+    def train(self):
         current_best_game = None
         self.time_started = datetime.now()
-        for i in range(num_iterations):
+        for i in range(params["training_iterations"]):
             print(i, "th iteration")
             batch = []
             node = self.mcts.root
             found_new_best = False
             while not self.game.is_terminal(node):
-                for j in range(params["num_iterations"]):
+                for j in range(params["mcts_iterations"]):
                     # (One of policy_network, policy_and_value will be none)
                     end_node, reward = self.mcts.rollout(node, policy_network=self.policy_network, policy_and_value=self.policy_value)                    
                     game = {"game": end_node.get_actions(), "reward": reward}

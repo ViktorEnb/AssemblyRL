@@ -2,13 +2,13 @@ pol_val: False
 pol_val_lr: 0.002
 pol_net: True
 pol_net_lr: 0.001
-mcts_iterations: 30
-training_iterations: 100
+mcts_iterations: 300
+training_iterations: 1000
 batch_size: 1
 best_games_perc: 0.005
 repr_lr: 0.0001
 repr_weight_decay: 0.00001
-mcts_exploration: 1.5
-mcts_network: 0.75
-mcts_network_start: 100
+mcts_exploration: 1
+mcts_network: 0.5
+mcts_network_start: 50
 

@@ -9,6 +9,6 @@ if __name__ == "__main__":
 
     repr_size = 16
     hidden_size = 16
-    game = Swap2Elements(repr_size, hidden_size)
+    game = DotProduct2x1(repr_size, hidden_size)
     agent = Agent(game, repr_size, hidden_size, game.get_num_actions(), load=False, save=True)
     agent.train()  

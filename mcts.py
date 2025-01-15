@@ -18,9 +18,13 @@ class MCTS:
         self.plotter = MCTSPlotter(self.root, game)
         self.plotter.root = self.root
         self.network_values = {}
-        self.exp_factor = params["mcts_exploration"]  #exploration parameter
-        self.net_factor = params["mcts_network"] #policy network bias parameter
 
+        self.iterations = 0
+        self.exp_factor = params["mcts_exploration"]  #exploration parameter
+        if self.iterations >= params["mcts_network_start"]:
+            self.net_factor = params["mcts_network"] #policy network bias parameter
+        else:
+            self.net_factor = 0
     def rollout(self, node, policy_network = None, policy_and_value = None):
         #Performs a rollout either with a policy netowrk or with a policy combined with value network
         #Exactly one of the policy_network, policy_and_value network has to not be None
@@ -40,8 +44,6 @@ class MCTS:
                 #Remove illegal moves
                 action_probs = torch.mul(action_probs, self.game.get_legal_moves(node)).detach().numpy()
                 action_probs = 1.0 / sum(action_probs) * action_probs
-                # action = np.random.choice(self.game.get_actions())
-                # while self.game.get_legal_moves(node)[action] == 0:
                 action = np.random.choice(self.game.get_actions(), p=action_probs)    
 
                 if action not in node.children:
@@ -139,7 +141,7 @@ class MCTS:
             current_node = current_node.parent
 
     def softmax(self, x):
-        """Compute softmax values for each set of scores in x."""
+        #Compute softmax values for each set of scores in x
         temperature=1
         e_x = np.exp((x - np.max(x)) / temperature)
         return e_x / e_x.sum()
@@ -164,6 +166,10 @@ class MCTS:
         self.root = Node(state=self.game.initialize_state(), parent=None)
         self.plotter.reset(self.root)
         self.network_values = {} #have to reset network_values as network will be trained inbetween iterations
+        self.iterations += 1
+        if self.iterations >= params["mcts_network_start"]:
+            self.net_factor = params["mcts_network"]
+
 
 
 

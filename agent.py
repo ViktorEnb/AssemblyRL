@@ -68,6 +68,7 @@ class Agent:
                     if reward > self.highest_reward:
                         found_new_best = True
                         print("Got new best reward: ", reward)
+
                     #Check for terminal game to prevent weird situations while using pol-val
                     if reward >= self.highest_reward and self.game.is_terminal(end_node):
                         current_best_game = game
@@ -76,9 +77,6 @@ class Agent:
                 self.mcts.plotter.current_level += 1
                 node = self.mcts.select_best_action(node)
 
-            
-            reward = current_best_game["reward"]
-            print("Got reward ", reward)
             if self.policy_network != None:
                 self.sort_and_train(batch)
             elif self.policy_value != None:

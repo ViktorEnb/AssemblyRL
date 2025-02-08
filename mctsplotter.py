@@ -138,8 +138,8 @@ class MCTSPlotter:
             Visit count: {self.G.nodes[node]['visit_count']}<br>
             Reward term: {reward_term}<br>
             Exploration term: {exploration_term} <br>
-            Total UCT value: {uct_value} <br> 
             Network term: {self.network_values[self.G.nodes[node]['level']][node]} <br>
+            Total UCT value: {uct_value + self.network_values[self.G.nodes[node]['level']][node]} <br> 
             """ 
             for node in self.G.nodes()
             for reward_term, exploration_term, uct_value in [self.get_uct_terms(self.G.nodes[node]['reward'], self.G.nodes[node]['visit_count'])]
